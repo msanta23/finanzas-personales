@@ -22,3 +22,4 @@ data/*.db
 *.key
 *.pem
 *.pub
+*.tar.gz
