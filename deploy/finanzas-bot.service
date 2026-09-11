@@ -1,0 +1,15 @@
+[Unit]
+Description=Finanzas Pro - Telegram Bot 24/7
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/PF
+EnvironmentFile=/home/ubuntu/PF/.env
+ExecStart=/home/ubuntu/PF/.venv/bin/python run_bot.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

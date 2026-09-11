@@ -1,0 +1,15 @@
+[Unit]
+Description=Finanzas Pro - Streamlit Web Dashboard
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/PF
+EnvironmentFile=/home/ubuntu/PF/.env
+ExecStart=/home/ubuntu/PF/.venv/bin/streamlit run app.py --server.port 8501 --server.address 0.0.0.0
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

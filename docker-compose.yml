@@ -1,0 +1,22 @@
+services:
+  telegram-bot:
+    build: .
+    container_name: finanzas-telegram-bot
+    restart: always
+    command: python run_bot.py
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+
+  streamlit-web:
+    build: .
+    container_name: finanzas-web
+    restart: always
+    command: streamlit run app.py --server.port=8501 --server.address=0.0.0.0
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data

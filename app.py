@@ -19,6 +19,11 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+from src.utils.auth import check_password, render_logout_button
+
+# Proteger la aplicación con contraseña
+check_password()
+
 from src.database.connection import init_db, seed_demo_data, clear_user_data
 from src.ui.views.dashboard import render_dashboard_view
 from src.ui.views.cashflow import render_cashflow_view
@@ -93,6 +98,7 @@ def main():
                 confirm_seed_dialog()
 
         st.markdown("---")
+        render_logout_button()
         st.caption("Desarrollado para optimización patrimonial e independencia financiera.")
 
     # ----------------------------------------------------
