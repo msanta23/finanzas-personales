@@ -1,0 +1,21 @@
+# Entorno virtual y dependencias
+.venv/
+vendor/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.env
+
+# Datos locales
+data/finance.db
+data/*.sqlite
+data/*.db
+
+# IDE y sistema
+.DS_Store
+.vscode/
+.idea/
+
+
