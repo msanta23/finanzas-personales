@@ -5,7 +5,7 @@ from ...services.transaction_service import (
     get_transactions, get_transaction_by_id, add_transaction, update_transaction, add_transfer, delete_transaction,
     get_categories, add_category, delete_category, get_accounts, add_account,
     update_account_details, delete_account,
-    import_csv_transactions
+    import_csv_transactions, get_recurring_commitments
 )
 from ...utils.formatting import format_currency
 
@@ -28,6 +28,38 @@ def render_cashflow_view(currency_symbol: str = "€"):
     # TAB 1: HISTORIAL Y EDICIÓN DE TRANSACCIONES
     # ----------------------------------------------------
     with tab_tx:
+        # Panel desplegable con el Resumen de Movimientos Recurrentes
+        df_rec_all = get_recurring_commitments()
+        if not df_rec_all.empty:
+            with st.expander("🔁 **Ver Compromisos Mensuales y Gastos Fijos / Recurrentes**", expanded=False):
+                rec_inc = df_rec_all[df_rec_all['type'] == 'income']['amount'].sum()
+                rec_exp = df_rec_all[df_rec_all['type'] == 'expense']['amount'].sum()
+                rec_net = rec_inc - rec_exp
+
+                col_r1, col_r2, col_r3 = st.columns(3)
+                with col_r1:
+                    st.metric("Ingresos Fijos Mensuales", f"+{format_currency(rec_inc, currency_symbol)}")
+                with col_r2:
+                    st.metric("Gastos Fijos y Suscripciones", f"-{format_currency(rec_exp, currency_symbol)}")
+                with col_r3:
+                    st.metric("Margen Fijo Disponible", format_currency(rec_net, currency_symbol))
+
+                rec_display = df_rec_all.copy()
+                rec_display['cat_fmt'] = rec_display['category_icon'].fillna('') + ' ' + rec_display['category_name'].fillna('Sin categoría')
+                rec_display['amount_fmt'] = rec_display.apply(lambda r: f"{'+' if r['type']=='income' else '-'}{format_currency(r['amount'], currency_symbol)}", axis=1)
+                
+                cols_rec_show = ['date', 'type', 'cat_fmt', 'description', 'account_name', 'amount_fmt']
+                renamed_rec = {
+                    'date': 'Fecha',
+                    'type': 'Tipo',
+                    'cat_fmt': 'Categoría',
+                    'description': 'Concepto Fijo',
+                    'account_name': 'Cuenta',
+                    'amount_fmt': 'Importe Mensual'
+                }
+                st.dataframe(rec_display[cols_rec_show].rename(columns=renamed_rec), use_container_width=True, hide_index=True)
+                st.write("")
+
         st.subheader("Filtros de búsqueda")
 
         # Obtener años disponibles en la base de datos
@@ -49,7 +81,7 @@ def render_cashflow_view(currency_symbol: str = "€"):
             ("Septiembre", 9), ("Octubre", 10), ("Noviembre", 11), ("Diciembre", 12)
         ]
 
-        col_y, col_m, col_f1, col_f2, col_f3 = st.columns([1.2, 1.3, 1.4, 1.6, 1.5])
+        col_y, col_m, col_f1, col_f2, col_f3, col_rec = st.columns([1.1, 1.2, 1.3, 1.4, 1.3, 1.4])
 
         with col_y:
             selected_year_tuple = st.selectbox("Año", year_options, format_func=lambda x: x[0], key="tx_filter_year")
@@ -73,12 +105,22 @@ def render_cashflow_view(currency_symbol: str = "€"):
             selected_acc_tuple = st.selectbox("Cuenta", acc_options, format_func=lambda x: x[0], key="tx_filter_acc")
             acc_param = selected_acc_tuple[1]
 
+        with col_rec:
+            rec_filter = st.selectbox(
+                "Recurrencia",
+                ["Todos", "recurring", "one_off"],
+                format_func=lambda x: {"Todos": "Todos los tipos", "recurring": "🔁 Solo Recurrentes", "one_off": "⚡ Solo Puntuales"}.get(x, x),
+                key="tx_filter_recurring"
+            )
+            rec_param = 1 if rec_filter == "recurring" else (0 if rec_filter == "one_off" else None)
+
         df_tx = get_transactions(
             category_id=cat_param,
             account_id=acc_param,
             tx_type=tx_type_param,
             year=year_param,
             month=month_param,
+            is_recurring=rec_param,
             limit=1000
         )
 
@@ -106,8 +148,9 @@ def render_cashflow_view(currency_symbol: str = "€"):
                 axis=1
             )
             display_df['category_display'] = display_df['category_icon'].fillna('') + ' ' + display_df['category_name'].fillna('Sin categoría')
+            display_df['recurring_display'] = display_df['is_recurring'].apply(lambda x: "🔁 Recurrente" if x == 1 else "⚡ Puntual")
             
-            cols_to_show = ['id', 'date', 'type', 'category_display', 'description', 'account_name', 'amount_formatted']
+            cols_to_show = ['id', 'date', 'type', 'category_display', 'description', 'account_name', 'recurring_display', 'amount_formatted']
             renamed_cols = {
                 'id': 'ID',
                 'date': 'Fecha',
@@ -115,9 +158,11 @@ def render_cashflow_view(currency_symbol: str = "€"):
                 'category_display': 'Categoría',
                 'description': 'Concepto',
                 'account_name': 'Cuenta',
+                'recurring_display': 'Frecuencia',
                 'amount_formatted': 'Importe'
             }
             st.dataframe(display_df[cols_to_show].rename(columns=renamed_cols), use_container_width=True, hide_index=True)
+
 
             st.write("---")
             # Panel interactivo para Modificar o Eliminar Movimientos

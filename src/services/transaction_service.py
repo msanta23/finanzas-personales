@@ -113,10 +113,11 @@ def get_transactions(
     tx_type: Optional[str] = None,
     year: Optional[int] = None,
     month: Optional[int] = None,
+    is_recurring: Optional[int] = None,
     limit: int = 1000,
     db_path: Path = DB_PATH
 ) -> pd.DataFrame:
-    """Consulta transacciones con filtros opcionales (incluyendo rango de fechas, año, mes, categoría, cuenta y tipo)."""
+    """Consulta transacciones con filtros opcionales (incluyendo rango de fechas, año, mes, recurrencia, categoría, cuenta y tipo)."""
     import calendar
     conn = get_connection(db_path)
     query = """
@@ -169,6 +170,9 @@ def get_transactions(
     if tx_type:
         query += " AND t.type = ?"
         params.append(tx_type)
+    if is_recurring is not None:
+        query += " AND t.is_recurring = ?"
+        params.append(1 if is_recurring else 0)
 
     query += " ORDER BY t.date DESC, t.id DESC LIMIT ?"
     params.append(limit)
@@ -176,6 +180,40 @@ def get_transactions(
     df = pd.read_sql_query(query, conn, params=params)
     conn.close()
     return df
+
+def get_recurring_commitments(db_path: Path = DB_PATH) -> pd.DataFrame:
+    """Obtiene el último movimiento activo de cada compromiso recurrente / gasto fijo mensual."""
+    conn = get_connection(db_path)
+    query = """
+        SELECT 
+            t.id,
+            t.date,
+            t.amount,
+            t.description,
+            t.type,
+            a.name AS account_name,
+            c.name AS category_name,
+            c.icon AS category_icon,
+            c.bucket_50_30_20
+        FROM transactions t
+        LEFT JOIN accounts a ON t.account_id = a.id
+        LEFT JOIN categories c ON t.category_id = c.id
+        WHERE t.id IN (
+            SELECT id FROM (
+                SELECT id, ROW_NUMBER() OVER (
+                    PARTITION BY LOWER(TRIM(description)), type 
+                    ORDER BY date DESC, id DESC
+                ) as rn
+                FROM transactions
+                WHERE is_recurring = 1
+            ) sub WHERE sub.rn = 1
+        )
+        ORDER BY t.type ASC, t.amount DESC
+    """
+    df = pd.read_sql_query(query, conn)
+    conn.close()
+    return df
+
 
 
 def add_transaction(

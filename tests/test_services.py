@@ -175,4 +175,21 @@ def test_investment_allocation_excludes_cash(temp_db):
     for acc_type in inv_df['type']:
         assert acc_type.lower() not in ['checking', 'savings', 'cash']
 
+def test_recurring_commitments_and_filter(temp_db):
+    from src.services.transaction_service import get_recurring_commitments
+    rec_df = get_recurring_commitments(db_path=temp_db)
+    assert not rec_df.empty
+    
+    # Probar filtro en get_transactions
+    tx_rec = get_transactions(is_recurring=1, db_path=temp_db)
+    assert not tx_rec.empty
+    for r in tx_rec['is_recurring']:
+        assert r == 1
+
+    tx_one_off = get_transactions(is_recurring=0, db_path=temp_db)
+    assert not tx_one_off.empty
+    for r in tx_one_off['is_recurring']:
+        assert r == 0
+
+
 
