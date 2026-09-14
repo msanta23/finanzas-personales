@@ -3,13 +3,24 @@ import plotly.express as px
 import pandas as pd
 from datetime import datetime
 from ...services.portfolio_service import (
-    get_net_worth_summary, get_asset_allocation, get_liabilities,
+    get_net_worth_summary, get_asset_allocation, get_investment_allocation, get_liabilities,
     get_historical_snapshots, take_snapshot, get_financial_goals,
     add_financial_goal, update_goal_progress
 )
 from ...services.transaction_service import update_account_balance, delete_account
 from ...utils.formatting import format_currency, format_percentage
 from ..components import plot_net_worth_trend
+
+acc_type_map = {
+    'investment': 'Fondos / Acciones / ETFs',
+    'crypto': 'Criptomonedas',
+    'real_estate': 'Bienes Inmuebles',
+    'pension': 'Planes de Pensiones',
+    'savings': 'Cuenta Ahorro / Remunerada',
+    'checking': 'Cuenta Corriente',
+    'loan': 'Préstamo',
+    'mortgage': 'Hipoteca'
+}
 
 def render_portfolio_view(currency_symbol: str = "€"):
     """Vista de seguimiento patrimonial, activos, deudas y objetivos financieros."""
@@ -29,22 +40,98 @@ def render_portfolio_view(currency_symbol: str = "€"):
 
     st.markdown("---")
 
-    tab_assets, tab_debts, tab_goals, tab_history = st.tabs([
-        "💎 Cartera de Activos",
+    tab_investments, tab_assets, tab_debts, tab_goals, tab_history = st.tabs([
+        "📈 Solo Inversiones",
+        "💎 Todos los Activos y Efectivo",
         "📉 Deudas y Pasivos",
         "🏆 Objetivos Financieros",
         "📊 Histórico Patrimonial"
     ])
 
     # ----------------------------------------------------
-    # TAB 1: ACTIVOS
+    # TAB 1: SOLO INVERSIONES (Excluye cuentas corrientes y efectivo)
+    # ----------------------------------------------------
+    with tab_investments:
+        df_inv = get_investment_allocation()
+        if not df_inv.empty:
+            total_invested = df_inv['balance'].sum()
+            net_worth = nw_summary.get("net_worth", 0.0)
+            inv_pct_nw = (total_invested / net_worth * 100) if net_worth > 0 else 0.0
+            
+            # Cálculo de rendimiento anual ponderado
+            weighted_yield = (df_inv['balance'] * df_inv['interest_rate']).sum() / total_invested if total_invested > 0 else 0.0
+            annual_estimated_return = (df_inv['balance'] * (df_inv['interest_rate'] / 100.0)).sum()
+
+            col_i1, col_i2, col_i3, col_i4 = st.columns(4)
+            with col_i1:
+                st.metric("Total Invertido", format_currency(total_invested, currency_symbol))
+            with col_i2:
+                st.metric("% de tu Patrimonio Neto", f"{inv_pct_nw:.1f}%")
+            with col_i3:
+                st.metric("Rendimiento Medio Estimado", f"{weighted_yield:.2f}% / año")
+            with col_i4:
+                st.metric("Retorno Anual Estimado", f"+{format_currency(annual_estimated_return, currency_symbol)}/año")
+
+            st.markdown("---")
+
+            col_inv_chart, col_inv_list = st.columns([1, 1])
+            with col_inv_chart:
+                st.subheader("Distribución de la Cartera de Inversión")
+                fig_inv = px.pie(
+                    df_inv,
+                    names='name',
+                    values='balance',
+                    hole=0.5,
+                    color_discrete_sequence=px.colors.qualitative.Bold
+                )
+                fig_inv.update_traces(textposition='inside', textinfo='percent+label')
+                fig_inv.update_layout(margin=dict(l=10, r=10, t=10, b=10), showlegend=False)
+                st.plotly_chart(fig_inv, use_container_width=True)
+
+            with col_inv_list:
+                st.subheader("Posiciones de Inversión")
+                for _, row in df_inv.iterrows():
+                    type_label = acc_type_map.get(row['type'], str(row['type']).capitalize())
+                    st.write(f"**{row['name']}** · `{type_label}`")
+                    yield_info = f" | Rendimiento: **{row['interest_rate']:.1f}%**" if row['interest_rate'] > 0 else ""
+                    st.caption(f"Valor: **{format_currency(row['balance'], currency_symbol)}** — {row['percentage']:.1f}% de tus inversiones{yield_info}")
+                    st.markdown("<hr style='margin: 4px 0;'/>", unsafe_allow_html=True)
+
+            with st.expander("🔄 Actualizar Valoración de una Inversión"):
+                inv_choices = [(r['name'], r['id'], r['balance']) for _, r in df_inv.iterrows()]
+                with st.form("form_update_inv_balance"):
+                    sel_inv = st.selectbox(
+                        "Selecciona la inversión",
+                        inv_choices,
+                        format_func=lambda x: f"{x[0]} (Valor actual: {format_currency(x[2], currency_symbol)})"
+                    )
+                    new_inv_balance = st.number_input(
+                        "Nuevo valor total / liquidativo",
+                        min_value=0.0,
+                        value=float(sel_inv[2]) if sel_inv else 0.0,
+                        step=100.0,
+                        format="%.2f",
+                        help="Actualiza el valor actual de tu fondo, acciones o criptoactivos."
+                    )
+                    save_snapshot_inv = st.checkbox("Guardar snapshot histórico con la nueva valoración", value=True, key="snap_inv")
+                    if st.form_submit_button("Guardar Nueva Valoración", type="primary"):
+                        update_account_balance(sel_inv[1], new_inv_balance)
+                        if save_snapshot_inv:
+                            take_snapshot()
+                        st.success(f"Valoración de '{sel_inv[0]}' actualizada a {format_currency(new_inv_balance, currency_symbol)}.")
+                        st.rerun()
+        else:
+            st.info("💡 No tienes cuentas ni activos catalogados como inversión todavía. Puedes dar de alta fondos, acciones, criptoactivos o inmuebles en la pestaña 'Cuentas y Categorías' de Flujo de Caja.")
+
+    # ----------------------------------------------------
+    # TAB 2: TODOS LOS ACTIVOS (Incluye cuentas corrientes y ahorro)
     # ----------------------------------------------------
     with tab_assets:
         df_assets = get_asset_allocation()
         if not df_assets.empty:
             col_chart, col_list = st.columns([1, 1])
             with col_chart:
-                st.subheader("Distribución de Activos")
+                st.subheader("Distribución Global de Activos")
                 fig = px.pie(
                     df_assets,
                     names='name',
@@ -57,9 +144,10 @@ def render_portfolio_view(currency_symbol: str = "€"):
                 st.plotly_chart(fig, use_container_width=True)
 
             with col_list:
-                st.subheader("Detalle de Cuentas")
+                st.subheader("Detalle de Todas las Cuentas")
                 for _, row in df_assets.iterrows():
-                    st.write(f"**{row['name']}** ({row['type']})")
+                    type_label = acc_type_map.get(row['type'], str(row['type']).capitalize())
+                    st.write(f"**{row['name']}** ({type_label})")
                     st.caption(f"Saldo: **{format_currency(row['balance'], currency_symbol)}** — {row['percentage']:.1f}% del total")
                     st.markdown("<hr style='margin: 4px 0;'/>", unsafe_allow_html=True)
 
@@ -67,7 +155,7 @@ def render_portfolio_view(currency_symbol: str = "€"):
                 asset_choices = [(r['name'], r['id'], r['balance']) for _, r in df_assets.iterrows()]
                 with st.form("form_update_asset_balance"):
                     sel_asset = st.selectbox(
-                        "Selecciona el activo o cuenta de inversión",
+                        "Selecciona el activo o cuenta",
                         asset_choices,
                         format_func=lambda x: f"{x[0]} (Saldo actual: {format_currency(x[2], currency_symbol)})"
                     )

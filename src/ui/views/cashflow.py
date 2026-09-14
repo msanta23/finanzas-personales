@@ -29,24 +29,75 @@ def render_cashflow_view(currency_symbol: str = "€"):
     # ----------------------------------------------------
     with tab_tx:
         st.subheader("Filtros de búsqueda")
-        col_f1, col_f2, col_f3 = st.columns(3)
+
+        # Obtener años disponibles en la base de datos
+        all_tx_dates = get_transactions(limit=5000)
+        available_years = []
+        if not all_tx_dates.empty and 'date' in all_tx_dates.columns:
+            years_found = sorted(list(set(pd.to_datetime(all_tx_dates['date']).dt.year.dropna().astype(int))), reverse=True)
+            available_years = years_found
+        if not available_years:
+            available_years = [datetime.today().year]
+        if datetime.today().year not in available_years:
+            available_years.insert(0, datetime.today().year)
+
+        year_options = [("Todos los años", None)] + [(str(y), y) for y in available_years]
+        month_names = [
+            ("Todos los meses", None),
+            ("Enero", 1), ("Febrero", 2), ("Marzo", 3), ("Abril", 4),
+            ("Mayo", 5), ("Junio", 6), ("Julio", 7), ("Agosto", 8),
+            ("Septiembre", 9), ("Octubre", 10), ("Noviembre", 11), ("Diciembre", 12)
+        ]
+
+        col_y, col_m, col_f1, col_f2, col_f3 = st.columns([1.2, 1.3, 1.4, 1.6, 1.5])
+
+        with col_y:
+            selected_year_tuple = st.selectbox("Año", year_options, format_func=lambda x: x[0], key="tx_filter_year")
+            year_param = selected_year_tuple[1]
+
+        with col_m:
+            selected_month_tuple = st.selectbox("Mes", month_names, format_func=lambda x: x[0], key="tx_filter_month")
+            month_param = selected_month_tuple[1]
 
         with col_f1:
             type_filter = st.selectbox("Tipo de Movimiento", ["Todos", "expense", "income"], format_func=lambda x: "Todos" if x == "Todos" else ("Gastos / Ahorro" if x == "expense" else "Ingresos"), key="tx_filter_type")
             tx_type_param = None if type_filter == "Todos" else type_filter
+
         with col_f2:
-            cat_options = [("Todas", None)] + [(f"{row['icon']} {row['name']} ({'Ingreso' if row['type']=='income' else 'Gasto/Ahorro'})", row['id']) for _, row in df_cats.iterrows()]
+            cat_options = [("Todas las categorías", None)] + [(f"{row['icon']} {row['name']} ({'Ingreso' if row['type']=='income' else 'Gasto/Ahorro'})", row['id']) for _, row in df_cats.iterrows()]
             selected_cat_tuple = st.selectbox("Categoría", cat_options, format_func=lambda x: x[0], key="tx_filter_cat")
             cat_param = selected_cat_tuple[1]
+
         with col_f3:
             acc_options = [("Todas las cuentas", None)] + [(row['name'], row['id']) for _, row in df_accs.iterrows()]
             selected_acc_tuple = st.selectbox("Cuenta", acc_options, format_func=lambda x: x[0], key="tx_filter_acc")
             acc_param = selected_acc_tuple[1]
 
-        df_tx = get_transactions(category_id=cat_param, account_id=acc_param, tx_type=tx_type_param, limit=1000)
+        df_tx = get_transactions(
+            category_id=cat_param,
+            account_id=acc_param,
+            tx_type=tx_type_param,
+            year=year_param,
+            month=month_param,
+            limit=1000
+        )
 
         if not df_tx.empty:
-            st.write(f"Mostrando **{len(df_tx)}** movimientos:")
+            inc_total = df_tx[df_tx['type'] == 'income']['amount'].sum()
+            exp_total = df_tx[df_tx['type'] == 'expense']['amount'].sum()
+            net_total = inc_total - exp_total
+
+            col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+            with col_m1:
+                st.metric("Movimientos encontrados", f"{len(df_tx)}")
+            with col_m2:
+                st.metric("Total Ingresos", f"+{format_currency(inc_total, currency_symbol)}")
+            with col_m3:
+                st.metric("Total Gastos", f"-{format_currency(exp_total, currency_symbol)}")
+            with col_m4:
+                st.metric("Balance Neto", format_currency(net_total, currency_symbol))
+
+            st.write("---")
             
             # Formatear para visualización
             display_df = df_tx.copy()

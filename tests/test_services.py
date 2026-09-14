@@ -157,3 +157,22 @@ def test_update_transaction(temp_db):
     accs_after = get_accounts(db_path=temp_db)
     assert accs_after[accs_after["id"] == acc_id].iloc[0]["balance"] == 920.0
 
+def test_transactions_year_and_month_filters(temp_db):
+    txs_2026_9 = get_transactions(year=2026, month=9, db_path=temp_db)
+    assert not txs_2026_9.empty
+    # Verificar que todas las fechas son de 2026-09
+    for d in txs_2026_9['date']:
+        assert d.startswith("2026-09")
+
+    txs_empty_year = get_transactions(year=1990, db_path=temp_db)
+    assert txs_empty_year.empty
+
+def test_investment_allocation_excludes_cash(temp_db):
+    from src.services.portfolio_service import get_investment_allocation
+    inv_df = get_investment_allocation(db_path=temp_db)
+    assert not inv_df.empty
+    # Ningún tipo de cuenta debe ser checking, savings o cash
+    for acc_type in inv_df['type']:
+        assert acc_type.lower() not in ['checking', 'savings', 'cash']
+
+

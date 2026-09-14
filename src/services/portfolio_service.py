@@ -54,6 +54,31 @@ def get_asset_allocation(db_path: Path = DB_PATH) -> pd.DataFrame:
         df['percentage'] = 0.0
     return df
 
+def get_investment_allocation(db_path: Path = DB_PATH) -> pd.DataFrame:
+    """Retorna únicamente los activos de inversión puros (excluyendo cuentas corrientes, cuentas de ahorro y efectivo)."""
+    conn = get_connection(db_path)
+    query = """
+        SELECT 
+            id,
+            name,
+            type,
+            balance,
+            currency,
+            interest_rate
+        FROM accounts
+        WHERE is_asset = 1 AND LOWER(type) NOT IN ('checking', 'savings', 'cash')
+        ORDER BY balance DESC
+    """
+    df = pd.read_sql_query(query, conn)
+    conn.close()
+
+    total = df['balance'].sum() if not df.empty else 0.0
+    if total > 0:
+        df['percentage'] = (df['balance'] / total) * 100
+    else:
+        df['percentage'] = 0.0
+    return df
+
 def get_liabilities(db_path: Path = DB_PATH) -> pd.DataFrame:
     """Retorna los pasivos / deudas ordenadas por saldo e interés."""
     conn = get_connection(db_path)

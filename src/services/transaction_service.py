@@ -111,10 +111,13 @@ def get_transactions(
     category_id: Optional[int] = None,
     account_id: Optional[int] = None,
     tx_type: Optional[str] = None,
+    year: Optional[int] = None,
+    month: Optional[int] = None,
     limit: int = 1000,
     db_path: Path = DB_PATH
 ) -> pd.DataFrame:
-    """Consulta transacciones con filtros opcionales."""
+    """Consulta transacciones con filtros opcionales (incluyendo rango de fechas, año, mes, categoría, cuenta y tipo)."""
+    import calendar
     conn = get_connection(db_path)
     query = """
         SELECT 
@@ -138,6 +141,19 @@ def get_transactions(
         WHERE 1=1
     """
     params = []
+
+    # Ajuste de año y mes si se proporcionan
+    if year is not None and month is not None:
+        _, last_day = calendar.monthrange(year, month)
+        query += " AND t.date >= ? AND t.date <= ?"
+        params.extend([f"{year:04d}-{month:02d}-01", f"{year:04d}-{month:02d}-{last_day:02d}"])
+    elif year is not None:
+        query += " AND t.date >= ? AND t.date <= ?"
+        params.extend([f"{year:04d}-01-01", f"{year:04d}-12-31"])
+    elif month is not None:
+        query += " AND CAST(strftime('%m', t.date) AS INTEGER) = ?"
+        params.append(month)
+
     if start_date:
         query += " AND t.date >= ?"
         params.append(start_date)
@@ -160,6 +176,7 @@ def get_transactions(
     df = pd.read_sql_query(query, conn, params=params)
     conn.close()
     return df
+
 
 def add_transaction(
     account_id: Optional[int],
