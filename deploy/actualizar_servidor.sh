@@ -23,8 +23,9 @@ fi
 
 # 2. Empaquetar y enviar a Oracle Cloud
 echo "📦 2/3 Empaquetando y enviando a Oracle Cloud ($SERVER_IP)..."
-tar --exclude='.venv' --exclude='__pycache__' --exclude='vendor' --exclude='.git' --exclude='*.key' --exclude='.pytest_cache' --exclude='data/finance.db' -czf finanzas_update.tar.gz .
+tar --exclude='.venv' --exclude='__pycache__' --exclude='vendor' --exclude='.git' --exclude='*.key' --exclude='.pytest_cache' --exclude='data/finance.db' --exclude='*.tar.gz' --exclude='*.log' -czf finanzas_update.tar.gz . || true
 scp -o StrictHostKeyChecking=no -i "$KEY_FILE" finanzas_update.tar.gz ubuntu@"$SERVER_IP":~/
+
 
 # 3. Aplicar en el servidor y reiniciar
 echo "⚙️ 3/3 Aplicando cambios y reiniciando servicios en Oracle..."
