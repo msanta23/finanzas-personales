@@ -65,6 +65,7 @@ def seed_demo_data(db_path: Path = DB_PATH, force: bool = False):
         ('Suscripciones (Netflix, Spotify, etc.)', 'expense', 'wants', '📺', '#D97706'),
         ('Viajes y Vacaciones', 'expense', 'wants', '✈️', '#B45309'),
         ('Compras y Ropa', 'expense', 'wants', '🛍️', '#FCD34D'),
+        ('Deporte', 'expense', 'wants', '🏋️', '#10B981'),
 
         # Ahorro e Inversión (Savings - 20%)
         ('Fondo de Emergencia', 'expense', 'savings', '🛡️', '#8B5CF6'),

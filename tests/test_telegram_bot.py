@@ -37,17 +37,29 @@ def test_commands(test_bot):
     assert "Categorías Disponibles" in resp_cats
 
 def test_record_expense_with_keyword_matching(test_bot, temp_db):
-    # Registrar compra de supermercado
-    resp = test_bot.handle_message(user_id=154948717, text="18.75 Mercadona compra semanal")
+    # Registrar compra de supermercado con "comida supermercado"
+    resp = test_bot.handle_message(user_id=154948717, text="14 comida supermercado")
     assert "Gasto Registrado" in resp
-    assert "18.75 €" in resp
+    assert "14.00 €" in resp
     assert "Supermercado y Alimentación" in resp
+
+    # Registrar gasto deportivo real
+    resp_sport = test_bot.handle_message(user_id=154948717, text="45 gimnasio basic fit")
+    assert "Gasto Registrado" in resp_sport
+    assert "45.00 €" in resp_sport
+    assert "Deporte" in resp_sport
+
+    # Registrar restaurante
+    resp_rest = test_bot.handle_message(user_id=154948717, text="28.50 cena restaurante")
+    assert "Gasto Registrado" in resp_rest
+    assert "28.50 €" in resp_rest
+    assert "Restaurantes y Bares" in resp_rest
 
     # Verificar que se guardó en la base de datos
     df_tx = get_transactions(db_path=temp_db)
-    matched = df_tx[df_tx["description"] == "Mercadona compra semanal"]
+    matched = df_tx[df_tx["description"] == "comida supermercado"]
     assert not matched.empty
-    assert float(matched.iloc[0]["amount"]) == 18.75
+    assert float(matched.iloc[0]["amount"]) == 14.00
     assert matched.iloc[0]["category_name"] == "Supermercado y Alimentación"
 
 def test_record_income(test_bot, temp_db):
@@ -67,4 +79,5 @@ def test_record_transfer_between_accounts(test_bot, temp_db):
     assert "400.00 €" in resp
     assert "Abanca" in resp
     assert "My Investor" in resp
+
 

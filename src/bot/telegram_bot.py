@@ -66,71 +66,71 @@ class TelegramFinanceBot:
 
         self.api_base = f"https://api.telegram.org/bot{self.token}"
 
-        # Mapeo de palabras clave para autocategorización inteligente
+        # Mapeo de palabras clave complementarias por categoría
         self.keyword_category_map = {
             # Supermercado y Alimentación
             "Supermercado y Alimentación": [
-                "mercadona", "carrefour", "lidl", "dia", "aldi", "eroski", "alcampo",
-                "super", "supermercado", "hipercor", "fruta", "fruteria", "pan", "panaderia",
+                "supermercado", "super", "alimentacion", "comida", "alimentos", "mercadona", "carrefour", "lidl", "dia", "aldi",
+                "eroski", "alcampo", "hipercor", "fruta", "fruteria", "pan", "panaderia",
                 "pescaderia", "carniceria", "compra", "comestibles"
             ],
             # Restaurantes y Bares
             "Restaurantes y Bares": [
-                "restaurante", "bar", "cafe", "cafeteria", "cerveza", "cervezas", "copa", "copas",
-                "cena", "almuerzo", "desayuno", "merienda", "tapas", "vermu", "mcdonalds", "burger",
+                "restaurante", "restaurantes", "bar", "bares", "cafe", "cafeteria", "cerveza", "cervezas", "copa", "copas",
+                "cena", "cenar", "almuerzo", "comer fuera", "desayuno", "merienda", "tapas", "vermu", "mcdonalds", "burger",
                 "pizza", "telepizza", "dominos", "glovo", "uber eats", "just eat", "starbucks"
             ],
             # Transporte y Combustible
             "Transporte y Combustible": [
-                "gasolina", "gasoil", "diesel", "combustible", "repsol", "cepsa", "bp", "galp",
+                "transporte", "combustible", "gasolina", "gasoil", "diesel", "repsol", "cepsa", "bp", "galp",
                 "parking", "aparcamiento", "peaje", "uber", "cabify", "taxi", "freenow", "metro",
                 "bus", "autobus", "tren", "renfe", "ave", "vuelo", "billete", "taller", "coche", "itv"
             ],
             # Suscripciones
             "Suscripciones (Netflix, Spotify, etc.)": [
-                "netflix", "spotify", "hbo", "max", "disney", "prime", "amazon prime", "youtube",
-                "apple", "icloud", "chatgpt", "openai", "patreon", "twitch", "suscripcion"
+                "suscripcion", "suscripciones", "netflix", "spotify", "hbo", "max", "disney", "prime", "amazon prime", "youtube",
+                "apple", "icloud", "chatgpt", "openai", "patreon", "twitch"
             ],
             # Suministros
             "Suministros (Luz, Agua, Gas, Internet)": [
-                "luz", "electricidad", "agua", "gas", "internet", "fibra", "telefono", "movil",
+                "suministros", "luz", "electricidad", "agua", "gas", "internet", "fibra", "telefono", "movil",
                 "vodafone", "movistar", "orange", "digi", "yoigo", "iberdrola", "endesa", "naturgy", "totalenergies"
             ],
             # Ocio y Eventos
             "Ocio, Cine y Eventos": [
-                "cine", "teatro", "concierto", "festival", "fiesta", "evento", "museo", "entrada",
-                "entradas", "steam", "playstation", "nintendo", "juego", "videojuego", "ocio"
+                "ocio", "cine", "teatro", "concierto", "festival", "fiesta", "evento", "museo", "entrada",
+                "entradas", "steam", "playstation", "nintendo", "juego", "videojuego"
             ],
             # Compras y Ropa
             "Compras y Ropa": [
-                "zara", "pull", "bershka", "stradivarius", "mango", "h&m", "ropa", "zapatos",
-                "zapatillas", "corte ingles", "shein", "aliexpress", "amazon", "compras", "tienda"
+                "ropa", "compras", "zara", "pull", "bershka", "stradivarius", "mango", "h&m", "zapatos",
+                "zapatillas", "corte ingles", "shein", "aliexpress", "amazon", "tienda"
             ],
-            # Deporte
+            # Deporte (palabras estrictas deportivas)
             "Deporte": [
-                "gimnasio", "gym", "padel", "crossfit", "deporte", "decathlon", "running",
-                "futbol", "piscina", "entrenamiento", "suplemento", "proteina"
+                "deporte", "deportes", "gimnasio", "gym", "padel", "crossfit", "decathlon", "running",
+                "futbol", "piscina", "entrenamiento", "suplemento", "proteina", "fitness"
             ],
             # Salud y Seguros
             "Salud y Seguros": [
-                "farmacia", "medico", "dentista", "optica", "gafas", "seguro", "sanitas",
+                "salud", "seguro", "seguros", "farmacia", "medico", "dentista", "optica", "gafas", "sanitas",
                 "adeslas", "mapfre", "psicologo", "medicamento", "medicina", "hospital", "clinica"
             ],
             # Viajes y Vacaciones
             "Viajes y Vacaciones": [
-                "viaje", "viajes", "hotel", "airbnb", "booking", "vuelo", "ryanair", "vueling",
-                "iberia", "vacaciones", "escapada", "maleta", "alojamiento"
+                "viaje", "viajes", "vacaciones", "hotel", "airbnb", "booking", "ryanair", "vueling",
+                "iberia", "escapada", "maleta", "alojamiento"
             ],
             # Vivienda
             "Vivienda (Alquiler/Hipoteca)": [
-                "alquiler", "hipoteca", "comunidad", "piso", "casa", "ibi", "seguro hogar"
+                "vivienda", "alquiler", "hipoteca", "comunidad", "piso", "casa", "ibi", "seguro hogar"
             ],
             # Inversiones y Ahorro
             "Fondos Indexados / ETFs": [
-                "fondo", "indexado", "etf", "msci", "world", "sp500", "s&p", "vanguard", "amundi", "inversion", "aportacion"
+                "fondo", "fondos", "indexado", "indexados", "etf", "etfs", "msci", "world", "sp500", "s&p", "vanguard", "amundi", "inversion", "inversiones", "aportacion"
             ],
             "Criptomonedas": [
-                "crypto", "cripto", "bitcoin", "btc", "eth", "ethereum", "binance", "kraken"
+                "crypto", "cripto", "criptomonedas", "bitcoin", "btc", "eth", "ethereum", "binance", "kraken"
             ],
             "Planes de Pensiones": [
                 "pension", "pensiones", "plan pension"
@@ -147,7 +147,11 @@ class TelegramFinanceBot:
             ],
             "Ventas / Freelance": [
                 "freelance", "factura", "cliente", "venta", "ventas", "wallapop", "vinted"
-            ]
+            ],
+            # Otras categorías directas
+            "Caprichos": ["capricho", "caprichos"],
+            "Necesidades": ["necesidad", "necesidades"],
+            "Bodas": ["boda", "bodas"]
         }
 
     # ----------------------------------------------------
@@ -177,36 +181,86 @@ class TelegramFinanceBot:
             return False
 
     # ----------------------------------------------------
-    # PARSER INTELIGENTE DE TEXTO
+    # PARSER INTELIGENTE DE TEXTO Y CATEGORÍAS
     # ----------------------------------------------------
+    @staticmethod
+    def _normalize(text: str) -> str:
+        """Elimina acentos, signos de puntuación y pasa a minúsculas."""
+        import unicodedata
+        if not text:
+            return ""
+        norm = ''.join(c for c in unicodedata.normalize('NFD', text.lower()) if unicodedata.category(c) != 'Mn')
+        return re.sub(r'[^a-z0-9\s]', ' ', norm)
+
     def match_category(self, text: str, tx_type: str, df_cats) -> Tuple[int, str, str]:
-        """Identifica la categoría más adecuada según el texto."""
-        text_lower = text.lower()
-        
-        # 1. Buscar por palabras clave en nuestro diccionario
-        for cat_name, keywords in self.keyword_category_map.items():
-            for kw in keywords:
-                # Búsqueda por palabra completa o contenida
-                if re.search(r'\b' + re.escape(kw) + r'\b', text_lower):
-                    cat_row = df_cats[df_cats['name'].str.lower() == cat_name.lower()]
-                    if not cat_row.empty:
-                        r = cat_row.iloc[0]
-                        return int(r['id']), str(r['name']), str(r['icon'])
+        """
+        Identifica la categoría buscando coincidencias directas con el nombre de la categoría
+        o palabras clave de forma estricta.
+        """
+        if df_cats.empty:
+            return 1, "General", "📌"
 
-        # 2. Buscar si el nombre de la categoría está directamente en el texto
-        for _, r in df_cats.iterrows():
-            if r['name'].lower() in text_lower:
-                return int(r['id']), str(r['name']), str(r['icon'])
+        norm_text = self._normalize(text)
+        user_words = set(w for w in norm_text.split() if len(w) >= 3)
+        stop_words = {"para", "con", "del", "por", "una", "uno", "los", "las", "mes", "ano", "hoy", "pago"}
+        user_words = user_words - stop_words
 
-        # 3. Categoría por defecto según tipo
-        subset = df_cats[df_cats['type'] == tx_type]
-        if not subset.empty:
-            r = subset.iloc[0]
-            return int(r['id']), str(r['name']), str(r['icon'])
-        
-        # Fallback general
-        first_r = df_cats.iloc[0]
-        return int(first_r['id']), str(first_r['name']), str(first_r['icon'])
+        # Filtrar categorías candidatas por tipo (expense / income)
+        cats_type = df_cats[df_cats['type'] == tx_type]
+        if cats_type.empty:
+            cats_type = df_cats
+
+        best_cat = None
+        highest_score = 0
+
+        for _, r in cats_type.iterrows():
+            cat_name = str(r['name'])
+            cat_id = int(r['id'])
+            cat_icon = str(r['icon'] or "📌")
+            norm_cat_name = self._normalize(cat_name)
+            cat_name_words = set(w for w in norm_cat_name.split() if len(w) >= 3) - stop_words
+
+            score = 0
+
+            # 1. ¿El nombre completo de la categoría está dentro del texto del usuario?
+            if norm_cat_name in norm_text:
+                score += 1000
+
+            # 2. ¿Alguna palabra del nombre de la categoría está escrita por el usuario?
+            # Ej: usuario escribe "supermercado", "bodas", "deporte", "compras", "salud", "nomina"
+            common_words = user_words.intersection(cat_name_words)
+            if common_words:
+                score += len(common_words) * 300
+
+            # 3. ¿Alguna palabra clave asociada coincide?
+            # Buscar en keyword_category_map
+            kw_list = self.keyword_category_map.get(cat_name, [])
+            for kw in kw_list:
+                norm_kw = self._normalize(kw)
+                # Si es una frase clave (ej. "el corte ingles", "uber eats")
+                if " " in norm_kw:
+                    if norm_kw in norm_text:
+                        score += 250
+                elif norm_kw in user_words:
+                    score += 150
+
+            if score > highest_score:
+                highest_score = score
+                best_cat = (cat_id, cat_name, cat_icon)
+
+        if best_cat and highest_score > 0:
+            return best_cat
+
+        # 4. Fallback si no hay ninguna coincidencia:
+        # Intentar categoría genérica como 'Otros Gastos' / 'Otros Ingresos' o la primera del tipo
+        fallback_names = ["otros gastos", "general", "otros", "otros ingresos"]
+        for _, r in cats_type.iterrows():
+            if str(r['name']).lower() in fallback_names:
+                return int(r['id']), str(r['name']), str(r['icon'] or "📌")
+
+        first_r = cats_type.iloc[0]
+        return int(first_r['id']), str(first_r['name']), str(first_r['icon'] or "📌")
+
 
     def match_account(self, text: str, df_accs) -> Tuple[Optional[int], str]:
         """Identifica la cuenta bancaria mencionada o devuelve la principal."""
