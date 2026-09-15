@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime
 from ...services.transaction_service import (
     get_transactions, get_transaction_by_id, add_transaction, update_transaction, add_transfer, delete_transaction,
-    get_categories, add_category, delete_category, get_accounts, add_account,
+    get_categories, add_category, update_category, delete_category, get_accounts, add_account,
     update_account_details, delete_account,
     import_csv_transactions, get_recurring_commitments
 )
@@ -527,10 +527,17 @@ def render_cashflow_view(currency_symbol: str = "€"):
             
             cat_action = st.radio(
                 "Categorías",
-                ["📋 Ver Categorías", "➕ Nueva Categoría", "🗑️ Eliminar Categoría"],
+                ["📋 Ver Categorías", "✏️ Modificar Categoría", "➕ Nueva Categoría", "🗑️ Eliminar Categoría"],
                 horizontal=True,
                 label_visibility="collapsed"
             )
+
+            bucket_labels = {
+                'income': '💰 Ingreso (Nómina, Rendimientos...)',
+                'needs': '🏠 Necesidades Básicas (50%)',
+                'wants': '🎉 Deseos y Ocio (30%)',
+                'savings': '📈 Ahorro e Inversión (20%)'
+            }
 
             if cat_action == "📋 Ver Categorías":
                 st.write("**💰 Categorías de Ingreso:**")
@@ -543,20 +550,76 @@ def render_cashflow_view(currency_symbol: str = "€"):
                 st.write("**💸 Categorías de Gasto:**")
                 df_exp = df_cats[df_cats['type'] == 'expense']
                 if not df_exp.empty:
-                    bucket_labels = {'needs': '🏠 Necesidades (50%)', 'wants': '🎉 Deseos (30%)', 'savings': '📈 Ahorro/Inversión (20%)'}
+                    b_simple = {'needs': '🏠 Necesidades (50%)', 'wants': '🎉 Deseos (30%)', 'savings': '📈 Ahorro/Inversión (20%)'}
                     for _, r in df_exp.iterrows():
-                        st.write(f"- {r['icon']} **{r['name']}** *({bucket_labels.get(r['bucket_50_30_20'], r['bucket_50_30_20'])})*")
+                        st.write(f"- {r['icon']} **{r['name']}** *({b_simple.get(r['bucket_50_30_20'], r['bucket_50_30_20'])})*")
+
+            elif cat_action == "✏️ Modificar Categoría":
+                if not df_cats.empty:
+                    cat_edit_options = [(int(r['id']), r['name'], r['type'], r['bucket_50_30_20'], r['icon'] or '📌', r['color'] or '#4F46E5') for _, r in df_cats.iterrows()]
+                    selected_cat_tuple = st.selectbox(
+                        "Selecciona la categoría a modificar",
+                        cat_edit_options,
+                        format_func=lambda x: f"{x[4]} {x[1]} ({'Ingreso' if x[2]=='income' else 'Gasto'})"
+                    )
+                    if selected_cat_tuple:
+                        c_id, c_name, c_type, c_bucket, c_icon, c_color = selected_cat_tuple
+                        bucket_keys = ["needs", "wants", "savings", "income"]
+                        bucket_idx = bucket_keys.index(c_bucket) if c_bucket in bucket_keys else 0
+
+                        with st.form(key=f"form_edit_cat_{c_id}"):
+                            edit_cat_name = st.text_input("Nombre de la categoría", value=c_name)
+                            col_ce1, col_ce2 = st.columns(2)
+                            with col_ce1:
+                                edit_cat_type = st.selectbox(
+                                    "Tipo de Categoría",
+                                    ["expense", "income"],
+                                    index=0 if c_type == 'expense' else 1,
+                                    format_func=lambda x: "💸 Gasto" if x == "expense" else "💰 Ingreso"
+                                )
+                            with col_ce2:
+                                edit_cat_icon = st.text_input("Icono (Emoji)", value=c_icon)
+
+                            edit_cat_bucket = st.selectbox(
+                                "Asignación Presupuesto (Regla 50/30/20)",
+                                bucket_keys,
+                                index=bucket_idx,
+                                format_func=lambda x: bucket_labels.get(x, x)
+                            )
+
+                            col_b1, col_b2 = st.columns(2)
+                            with col_b1:
+                                save_cat_btn = st.form_submit_button("💾 Guardar Cambios", type="primary", use_container_width=True)
+                            with col_b2:
+                                del_cat_btn = st.form_submit_button("🗑️ Eliminar Categoría", type="secondary", use_container_width=True)
+
+                            if save_cat_btn:
+                                if edit_cat_name.strip():
+                                    update_category(
+                                        category_id=c_id,
+                                        name=edit_cat_name,
+                                        cat_type=edit_cat_type,
+                                        bucket_50_30_20=edit_cat_bucket,
+                                        icon=edit_cat_icon,
+                                        color=c_color
+                                    )
+                                    st.success(f"Categoría '{edit_cat_name}' actualizada correctamente.")
+                                    st.rerun()
+                            if del_cat_btn:
+                                ok = delete_category(c_id)
+                                if ok:
+                                    st.success("Categoría eliminada con éxito.")
+                                    st.rerun()
+                                else:
+                                    st.error("No se puede eliminar la categoría porque tiene movimientos asociados. Elimina o reasigna los movimientos primero.")
+                else:
+                    st.info("No hay categorías creadas aún.")
 
             elif cat_action == "➕ Nueva Categoría":
                 with st.form("form_add_cat", clear_on_submit=True):
                     cat_name = st.text_input("Nombre de la categoría", placeholder="Ej: Nómina Empresa X, Gimnasio, Mascotas...")
                     cat_type = st.selectbox("Tipo de Categoría", ["income", "expense"], format_func=lambda x: "💰 Ingreso" if x == "income" else "💸 Gasto")
-                    cat_bucket = st.selectbox("Asignación Presupuesto", ["income", "needs", "wants", "savings"], format_func=lambda x: {
-                        'income': '💰 Ingreso (Nómina, Rendimientos...)',
-                        'needs': '🏠 Necesidades Básicas (50%)',
-                        'wants': '🎉 Deseos y Ocio (30%)',
-                        'savings': '📈 Ahorro e Inversión (20%)'
-                    }.get(x, x))
+                    cat_bucket = st.selectbox("Asignación Presupuesto", ["income", "needs", "wants", "savings"], format_func=lambda x: bucket_labels.get(x, x))
                     cat_icon = st.text_input("Icono (Emoji)", value="💼" if cat_type == "income" else "📌")
                     
                     if st.form_submit_button("➕ Añadir Categoría", type="primary"):

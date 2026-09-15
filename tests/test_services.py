@@ -191,5 +191,29 @@ def test_recurring_commitments_and_filter(temp_db):
     for r in tx_one_off['is_recurring']:
         assert r == 0
 
+def test_update_category(temp_db):
+    from src.services.transaction_service import get_categories, update_category
+    cats = get_categories(db_path=temp_db)
+    target_id = int(cats.iloc[0]["id"])
+
+    ok = update_category(
+        category_id=target_id,
+        name="Supermercado VIP",
+        cat_type="expense",
+        bucket_50_30_20="needs",
+        icon="🛍️",
+        color="#10B981",
+        db_path=temp_db
+    )
+    assert ok is True
+
+    cats_after = get_categories(db_path=temp_db)
+    cat_row = cats_after[cats_after["id"] == target_id].iloc[0]
+    assert cat_row["name"] == "Supermercado VIP"
+    assert cat_row["icon"] == "🛍️"
+    assert cat_row["type"] == "expense"
+    assert cat_row["bucket_50_30_20"] == "needs"
+
+
 
 

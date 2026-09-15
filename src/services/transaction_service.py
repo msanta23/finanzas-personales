@@ -31,6 +31,22 @@ def add_category(name: str, cat_type: str, bucket_50_30_20: str, icon: str = "�
     conn.close()
     return new_id
 
+def update_category(category_id: int, name: str, cat_type: str, bucket_50_30_20: str, icon: str = "📌", color: str = "#4F46E5", db_path: Path = DB_PATH) -> bool:
+    """Modifica los datos de una categoría existente."""
+    conn = get_connection(db_path)
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        UPDATE categories
+        SET name = ?, type = ?, bucket_50_30_20 = ?, icon = ?, color = ?
+        WHERE id = ?
+        """,
+        (name.strip(), cat_type, bucket_50_30_20, icon.strip() or "📌", color, int(category_id))
+    )
+    conn.commit()
+    conn.close()
+    return True
+
 def delete_category(category_id: int, db_path: Path = DB_PATH) -> bool:
     """Elimina una categoría si no tiene transacciones asociadas."""
     conn = get_connection(db_path)
