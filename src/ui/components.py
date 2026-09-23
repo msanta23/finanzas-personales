@@ -16,26 +16,37 @@ def render_kpi_card(
     st.metric(label=title, value=value, delta=delta, delta_color=delta_color, help=help_text)
 
 def plot_cashflow_bar(df_monthly: pd.DataFrame, currency_symbol: str = "€") -> go.Figure:
-    """Gráfico de barras agrupadas comparando Ingresos vs Gastos por mes."""
+    """Gráfico de barras agrupadas comparando Ingresos vs Gastos vs Inversiones por mes."""
     fig = go.Figure()
     
     if not df_monthly.empty:
-        fig.add_trace(go.Bar(
-            x=df_monthly['month'],
-            y=df_monthly['income'],
-            name='Ingresos',
-            marker_color='#10B981',
-            text=[format_currency(val, currency_symbol) for val in df_monthly['income']],
-            textposition='auto'
-        ))
-        fig.add_trace(go.Bar(
-            x=df_monthly['month'],
-            y=df_monthly['expense'],
-            name='Gastos',
-            marker_color='#EF4444',
-            text=[format_currency(val, currency_symbol) for val in df_monthly['expense']],
-            textposition='auto'
-        ))
+        if 'income' in df_monthly.columns:
+            fig.add_trace(go.Bar(
+                x=df_monthly['month'],
+                y=df_monthly['income'],
+                name='Ingresos',
+                marker_color='#10B981',
+                text=[format_currency(val, currency_symbol) for val in df_monthly['income']],
+                textposition='auto'
+            ))
+        if 'expense' in df_monthly.columns:
+            fig.add_trace(go.Bar(
+                x=df_monthly['month'],
+                y=df_monthly['expense'],
+                name='Gastos',
+                marker_color='#EF4444',
+                text=[format_currency(val, currency_symbol) for val in df_monthly['expense']],
+                textposition='auto'
+            ))
+        if 'investment' in df_monthly.columns:
+            fig.add_trace(go.Bar(
+                x=df_monthly['month'],
+                y=df_monthly['investment'],
+                name='Inversiones',
+                marker_color='#6366F1',
+                text=[format_currency(val, currency_symbol) for val in df_monthly['investment']],
+                textposition='auto'
+            ))
 
     fig.update_layout(
         barmode='group',

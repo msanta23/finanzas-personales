@@ -214,6 +214,21 @@ def test_update_category(temp_db):
     assert cat_row["type"] == "expense"
     assert cat_row["bucket_50_30_20"] == "needs"
 
-
-
-
+def test_plot_cashflow_bar_with_investments():
+    import pandas as pd
+    from src.ui.components import plot_cashflow_bar
+    
+    df_monthly = pd.DataFrame({
+        'month': ['2026-07', '2026-08', '2026-09'],
+        'income': [2500.0, 2650.0, 2650.0],
+        'expense': [1200.0, 1150.0, 1195.56],
+        'investment': [500.0, 500.0, 500.0]
+    })
+    
+    fig = plot_cashflow_bar(df_monthly, "€")
+    assert fig is not None
+    assert len(fig.data) == 3
+    names = [trace.name for trace in fig.data]
+    assert "Ingresos" in names
+    assert "Gastos" in names
+    assert "Inversiones" in names

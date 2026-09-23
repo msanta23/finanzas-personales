@@ -65,14 +65,25 @@ def render_dashboard_view(currency_symbol: str = "€"):
     col_chart1, col_chart2 = st.columns([3, 2])
 
     with col_chart1:
-        st.subheader("💵 Evolución de Ingresos vs Gastos")
+        st.subheader("💵 Evolución de Ingresos, Gastos e Inversiones")
         # Generar histórico agregado por mes
         df_all_tx = get_transactions(limit=2000)
         if not df_all_tx.empty:
             df_all_tx['month'] = pd.to_datetime(df_all_tx['date']).dt.strftime('%Y-%m')
-            df_monthly_inc = df_all_tx[df_all_tx['type'] == 'income'].groupby('month')['amount'].sum().reset_index().rename(columns={'amount': 'income'})
-            df_monthly_exp = df_all_tx[df_all_tx['type'] == 'expense'].groupby('month')['amount'].sum().reset_index().rename(columns={'amount': 'expense'})
-            df_monthly = pd.merge(df_monthly_inc, df_monthly_exp, on='month', how='outer').fillna(0.0).sort_values('month').tail(6)
+            all_months = sorted(df_all_tx['month'].unique())
+            df_monthly = pd.DataFrame({'month': all_months})
+
+            # Ingresos
+            df_inc = df_all_tx[df_all_tx['type'] == 'income'].groupby('month')['amount'].sum().reset_index().rename(columns={'amount': 'income'})
+            # Gastos (excluye ahorro e inversiones: bucket_50_30_20 != 'savings')
+            df_exp = df_all_tx[(df_all_tx['type'] == 'expense') & (df_all_tx['bucket_50_30_20'] != 'savings')].groupby('month')['amount'].sum().reset_index().rename(columns={'amount': 'expense'})
+            # Inversiones y Ahorro (bucket_50_30_20 == 'savings')
+            df_inv = df_all_tx[(df_all_tx['type'] == 'expense') & (df_all_tx['bucket_50_30_20'] == 'savings')].groupby('month')['amount'].sum().reset_index().rename(columns={'amount': 'investment'})
+
+            df_monthly = df_monthly.merge(df_inc, on='month', how='left')
+            df_monthly = df_monthly.merge(df_exp, on='month', how='left')
+            df_monthly = df_monthly.merge(df_inv, on='month', how='left')
+            df_monthly = df_monthly.fillna(0.0).sort_values('month').tail(6)
             st.plotly_chart(plot_cashflow_bar(df_monthly, currency_symbol), use_container_width=True)
         else:
             st.info("No hay transacciones registradas aún.")
