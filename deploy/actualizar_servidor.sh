@@ -1,8 +1,15 @@
 #!/bin/bash
 set -e
 
-SERVER_IP="143.47.48.164"
-KEY_FILE="oracle_finanzas.key"
+# Cargar variables locales desde .env si existe
+if [ -f .env ]; then
+    set -a
+    source .env
+    set +a
+fi
+
+SERVER_IP="${SERVER_IP:-tu_ip_servidor}"
+KEY_FILE="${KEY_FILE:-oracle_finanzas.key}"
 COMMIT_MSG="${1:-Actualización de código y mejoras}"
 
 echo "=========================================="
