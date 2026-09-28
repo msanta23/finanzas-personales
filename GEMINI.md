@@ -1,127 +1,67 @@
-# 💰 FinanzasPro - Contexto del Proyecto y Registro de Sesiones (`gemini.md`)
+# 💰 FinanzasPro - Contexto del Proyecto y Arquitectura (`GEMINI.md`)
 
-Este documento sirve como **fuente única de verdad y memoria del proyecto** para que cualquier nueva sesión de Gemini / Antigravity comprenda de inmediato la arquitectura, funcionalidades implementadas, historial de decisiones de diseño, despliegues y convenciones de trabajo.
+Este documento sirve como **fuente única de verdad y contexto técnico** para que cualquier sesión de desarrollo comprenda de inmediato la arquitectura, funcionalidades implementadas, estructura del código, despliegue y convenciones de trabajo.
 
 ---
 
 ## 1. 📌 Visión General del Proyecto
 
-**FinanzasPro** es una plataforma integral de finanzas personales, análisis de flujo de caja, presupuestación 50/30/20, seguimiento patrimonial e independencia financiera (FIRE), complementada con un asistente en tiempo real vía Telegram Bot.
+**FinanzasPro** es una plataforma integral de finanzas personales, análisis de flujo de caja, seguimiento patrimonial, presupuestación e independencia financiera (FIRE), complementada con un asistente en tiempo real vía Telegram Bot.
 
 ### 🛠️ Stack Tecnológico
 - **Lenguaje**: Python 3.10+ (probado y optimizado en Python 3.12).
-- **Frontend / Dashboard**: [Streamlit](https://streamlit.io/) con componentes visuales interactivos construidos en [Plotly](https://plotly.com/python/).
+- **Frontend / Dashboard**: [Streamlit](https://streamlit.io/) con componentes visuales interactivos en [Plotly](https://plotly.com/python/).
 - **Base de Datos**: SQLite relacional (`data/finance.db`) con esquema modularizado en SQL.
 - **Bot Móvil**: Telegram Bot con polling asíncrono y parser de lenguaje natural desarrollado con librerías nativas (`urllib`), sin dependencias pesadas innecesarias.
-- **Despliegue & Nube**: Servidor VPS en Oracle Cloud Infrastructure (Ubuntu), gestionado mediante `systemd`, con firewall y soporte Docker / Compose.
-- **Control de Versiones**: Git & GitHub (`https://github.com/msanta23/finanzas-personales.git`).
-- **Tests**: Suite automatizada con `pytest` (19 tests unitarios y de integración).
+- **Despliegue & Nube**: Compatible con Linux VPS (systemd) y contenedores Docker / Docker Compose.
+- **Control de Versiones**: Git & GitHub.
+- **Tests**: Suite automatizada con `pytest` (tests unitarios y de integración).
 
 ---
 
-## 2. 🗣️ Historial de Conversaciones y Trabajo Realizado
+## 2. ⚡ Módulos y Funcionalidades
 
-### 💬 Conversación 1: "Personal Finance Optimization"
-* **Objetivo**: Creación desde cero de la aplicación completa de finanzas personales.
-* **Lo que se implementó**:
-  1. **Base de Datos Relacional**: Tablas `accounts`, `categories`, `transactions`, `budgets`, `financial_goals` y `portfolio_snapshots`.
-  2. **Capa de Servicios**:
-     - `transaction_service.py`: CRUD de transacciones, cuentas, categorías, traspasos entre cuentas y motor de importación de extractos bancarios en CSV (compatible con BBVA, Santander, CaixaBank, Revolut, N26, etc.).
-     - `budget_service.py`: Lógica de asignación 50/30/20 (Necesidades, Deseos, Ahorro/Inversión), límites mensuales y calculadora de fondo de emergencia.
-     - `portfolio_service.py`: Cálculo de Patrimonio Neto (*Net Worth*), balance de activos vs pasivos, metas financieras y registro de *snapshots* históricos.
-     - `optimizer_service.py`: Motor matemático con calculadora FIRE (regla del 4%, proyecciones de retiro e interés compuesto real ajustado por inflación) y simulador comparativo de amortización de deudas (**Método Avalancha** vs **Método Bola de Nieve** vs Pagos Mínimos).
-  3. **Vistas de Interfaz Web (Streamlit)**:
-     - `dashboard.py`: Panel principal con KPIs en tiempo real, gráficos de ingresos vs gastos, distribución mensual y alertas de sobrecostes.
-     - `cashflow.py`: Historial con filtros múltiples, formularios de registro, traspasos y gestión de cuentas.
-     - `budgets.py`: Seguimiento visual de presupuestos por categoría con semáforos de alerta.
-     - `portfolio.py`: Distribución patrimonial, deudas y metas.
-     - `optimizer.py`: Herramientas interactivas de simulación patrimonial y jubilación.
-  4. **Bot de Telegram**: Asistente para registrar gastos/ingresos en lenguaje natural (ej. `15.50 Mercadona compra`, `+2300 Nómina`), consultar `/saldo`, `/resumen`, `/cuentas` y realizar transferencias.
+### 📊 1. Panel Central (Dashboard)
+- **5 KPIs principales**: Gastos del período (consumo puro), Inversiones/Ahorro, Margen Libre disponible, Tasa de Ahorro e Inversión (%) e Ingresos totales.
+- **Selector Temporal**: Navegación por meses individuales o visualización de **"Todo el año"** con métricas y promedios acumulados.
+- **Visualización Gráfica**:
+  - Gráfico de evolución mensual (desglose de ingresos, gastos e inversiones).
+  - Gráfico Donut de distribución de gastos reales por categoría.
+  - Tabla de desglose de gastos ordenada de mayor a menor importe con porcentaje y número de movimientos.
+- **Diagnóstico Financiero**: Cálculo de gasto medio diario y mensual.
 
-### 💬 Conversación 2: "Estrategia De Asignación De Capital"
-* **Objetivo**: Refinar la gestión patrimonial, seguimiento de inversiones y compromisos mensuales.
-* **Lo que se implementó**:
-  1. **Pestaña Exclusiva "Solo Inversiones" en Portfolio**: Separación estricta entre capital líquido en cuentas corrientes/efectivo y activos invertidos (Fondos indexados, ETFs, Cripto, Planes de Pensiones).
-  2. **Métricas de Rentabilidad**: Cálculo del rendimiento anual ponderado (%) y retorno anual estimado en euros sobre las posiciones de inversión.
-  3. **Panel de Compromisos Recurrentes y Gastos Fijos**: Vista en acordeón con ingresos fijos, suscripciones recurrentes y cálculo del *Margen Fijo Disponible*.
-  4. **Filtros Temporales por Año y Mes**: Navegación ágil por períodos en el historial de transacciones y en el panel central.
-  5. **Gestión Dinámica de Categorías**: Posibilidad de renombrar categorías y cambiar sus iconos emoji directamente desde la interfaz.
-  6. **Mejora del Parser de Telegram**: Reconocimiento inteligente ampliado de palabras clave para autocategorizar gastos e ingresos con mayor precisión.
+### 💸 2. Flujo de Caja y Transacciones
+- **Filtros Independientes**: Filtrado por tipo (`💸 Gastos`, `📈 Ahorro / Inversión`, `💰 Ingresos`), categorías dinámicas, cuentas y fechas.
+- **Registro de Movimientos**: Formularios para transacciones simples y traspasos directos entre cuentas.
+- **Importación de Extractos Bancarios (CSV)**: Motor de detección y parseo automático compatible con los principales bancos.
+- **Gestión de Cuentas y Categorías**: Edición dinámica de nombres, tipos de cuenta, iconos emoji y clasificación.
 
-### 💬 Conversación 3: "Oracle"
-* **Objetivo**: Despliegue en producción en la nube de Oracle Cloud Infrastructure.
-* **Lo que se implementó**:
-  1. **Infraestructura Cloud**:
-     - Servidor Ubuntu en Oracle Cloud (IP pública: `143.47.48.164`).
-     - Acceso seguro mediante clave SSH privada: `oracle_finanzas.key`.
-  2. **Servicios Systemd en Producción**:
-     - `deploy/finanzas-web.service`: Mantiene la interfaz de Streamlit activa en el puerto `8501`.
-     - `deploy/finanzas-bot.service`: Mantiene el bot de Telegram escuchando mensajes de forma continua 24/7.
-  3. **Scripts de Automatización en `deploy/`**:
-     - `setup_oracle_cloud.sh`: Configura paquetes del sistema, entorno virtual `.venv`, reglas de firewall (`iptables`/`ufw`) y registra los servicios systemd.
-     - `actualizar_servidor.sh`: Empaqueta el código local (excluyendo la DB de desarrollo, llaves y venv), lo sube por SCP/SSH a la máquina Oracle, actualiza dependencias y reinicia ambos servicios automáticamente.
-     - `descargar_backup_db.sh`: Descarga la base de datos de producción `finance.db` desde el servidor Oracle a local y guarda un snapshot con fecha y hora en `data/backups/`.
-  4. **Seguridad Web**:
-     - Módulo `src/utils/auth.py` con pantalla de login protegida por contraseña (`WEB_PASSWORD` en `.env`).
-     - Protección de rutas para evitar accesos no autorizados al dashboard en la nube.
+### 🎯 3. Presupuestos y Compromisos
+- **Límites Presupuestarios**: Asignación de límites mensuales por categoría con semáforos visuales de alerta.
+- **Panel de Gastos Fijos y Recurrentes**: Acordeón con compromisos mensuales, suscripciones e ingresos recurrentes para calcular el *Margen Fijo Disponible*.
+- **Calculadora de Fondo de Emergencia**: Diagnóstico de tasa de consumo mensual (*burn rate*) y cobertura en meses de seguridad.
 
-### 💬 Conversación 4: "GitHub"
-* **Objetivo**: Configuración del repositorio remoto, control de versiones y sincronización automática.
-* **Lo que se implementó**:
-  1. **Repositorio Remoto**: Conectado a `https://github.com/msanta23/finanzas-personales.git` en la rama `main`.
-  2. **Pipeline Integrado de Despliegue**: El script `deploy/actualizar_servidor.sh` realiza automáticamente:
-     `git add` ➔ `git commit` ➔ `git push origin main` ➔ Empaquetado ➔ `scp` / `ssh` a Oracle Cloud ➔ Reinicio de servicios.
-  3. **Protección de Datos Sensibles**: `.gitignore` configurado para no versionar `.env`, claves privadas `*.key`, backups de base de datos ni bases de datos activas (`data/finance.db`).
+### 📈 4. Patrimonio Neto e Inversiones (Portfolio)
+- **Balance Patrimonial**: Cálculo automático de Patrimonio Neto (*Net Worth*), Activos vs Pasivos.
+- **Pestaña Exclusiva "Solo Inversiones"**: Separación entre liquidez corriente y activos invertidos (Fondos indexados, ETFs, Cripto, Planes de Pensiones) con rentabilidad anual ponderada (%) y retorno estimado en euros.
+- **Metas Financieras**: Objetivos de ahorro con seguimiento de progreso y fechas objetivo.
+- **Histórico Patrimonial**: Registro de snapshots temporales para seguir la evolución del patrimonio.
 
-### 💬 Conversación 5: "Refinamiento NLP del Bot de Telegram y Cuenta por Defecto"
-* **Objetivo**: Limpieza del concepto en transacciones y configuración de cuenta Revolut por defecto.
-* **Lo que se implementó**:
-  1. **Cuenta por Defecto Prioritaria**: Selección automática de `Revolut` si no se especifica ninguna cuenta en el mensaje del bot.
-  2. **Extracción y Limpieza de Cuenta**: Si se menciona una cuenta explícita (ej. `en revolut`, `abanca`, etc.), se extrae para asignar la transacción y se elimina del texto del concepto.
-  3. **Limpieza Inteligente de Etiquetas de Categoría**: Descarte automático de palabras redundantes de categoría (ej. `comida`, `supermercado`, `gasolina`, `ropa`) del concepto final cuando existe un comercio o descripción específica (ej. `15 ahorramas revolut comida` ➔ Concepto: `Ahorramas`, Cuenta: `Revolut`, Categoría: `Supermercado y Alimentación`).
-  4. **Ampliación del Diccionario de Comercios**: Incorporación de marcas y cadenas de supermercados como `ahorramas`, `bonpreu`, `consum`, `costco`, etc.
+### 🚀 5. Motor de Optimización Financiera
+- **Calculadora FIRE (Financial Independence, Retire Early)**:
+  - Edad estimada de retiro e importe objetivo según la regla del 4% (Standard, Lean y Fat FIRE).
+  - Proyección de interés compuesto real ajustado por inflación.
+- **Optimizador de Deudas**:
+  - Comparativa exacta entre el **Método Avalancha** (máximo ahorro en intereses) vs **Método Bola de Nieve** (victorias psicológicas rápidas) vs Pagos Mínimos.
 
-### 💬 Conversación 6: "Reestructuración del Panel Central y Desglose de Gastos Mensuales"
-* **Objetivo**: Separar las inversiones de los gastos puros en las métricas principales, eliminar la sección de presupuestos / 50-30-20 del panel central e incorporar la tabla de gastos mensuales ordenada por categoría.
-* **Lo que se implementó**:
-  1. **5 KPIs en Panel Central (`dashboard.py`)**:
-     - **Gastos**: Gastos puros de consumo (excluyendo aportaciones a inversión y ahorro).
-     - **Inversiones**: Aportaciones a ahorro e inversión del mes.
-     - **Margen Libre**: Superávit mensual neto (`Ingresos - Gastos - Inversiones`).
-     - **Tasa de Ahorro e Inversión**: Porcentaje destinado a patrimonio e inversión respecto a los ingresos.
-     - **Ingresos**: Total de ingresos percibidos en el mes.
-  2. **Eliminación de Presupuestos y 50/30/20 en Panel Central**: Desacopladas las alertas y tablas de presupuestos del panel principal.
-  3. **Tabla de Gastos del Mes por Categoría**: Nueva visualización agrupada y ordenada de mayor a menor importe, mostrando icono, categoría, total gastado, porcentaje sobre el total de gastos y número de movimientos.
-  4. **Gráfico Donut Ajustado**: Refleja la distribución de los gastos reales de consumo del mes en coherencia con el KPI de gastos.
-
-### 💬 Conversación 7: "Separación de Gastos y Ahorro en Filtros de Transacciones"
-* **Objetivo**: Separar el filtro de "Gastos / Ahorro" en dos opciones independientes ("Gastos" y "Ahorro / Inversión") en la vista de Flujo de Caja.
-* **Lo que se implementó**:
-  1. **Filtro de Tipo de Movimiento Independiente (`cashflow.py`)**:
-     - Opciones claras: `Todos los tipos`, `💸 Gastos` (gastos puros de necesidades y deseos), `📈 Ahorro / Inversión` (aportaciones patrimoniales y fondos) y `💰 Ingresos`.
-  2. **Actualización del Servicio (`transaction_service.py`)**:
-     - `get_transactions` ahora soporta `tx_type="expense"` (gastos reales excluyendo ahorro/inversión), `tx_type="savings"` (solo ahorro e inversión), `tx_type="all_expense"` y `bucket_50_30_20`.
-  3. **Categorías Dinámicas y Métricas en Historial**:
-     - El selector de categorías se adapta dinámicamente al tipo de movimiento seleccionado.
-     - Métricas KPI del historial desglosadas en 5 columnas: Movimientos, Total Ingresos, Total Gastos, Ahorro / Inversión y Balance Neto.
-     - Columna `Tipo` en la tabla formateada con etiquetas visuales (`💸 Gasto`, `📈 Ahorro / Inv.`, `💰 Ingreso`).
-     - Vista de categorías en pestaña 4 separada en Ingresos, Gastos y Ahorro e Inversión.
-
-### 💬 Conversación 8: "Filtro de Año Completo en Panel Central"
-* **Objetivo**: Permitir visualizar las estadísticas financieras de un año entero completo en el Panel Central (`dashboard.py`), además de la visualización por mes individual.
-* **Lo que se implementó**:
-  1. **Opción 'Todo el año' en Selector Temporal (`dashboard.py`)**:
-     - El selector de mes incluye ahora la opción inicial `"Todo el año"`.
-     - Si se elige un año y "Todo el año", los 5 KPIs principales (Gastos, Inversiones, Margen Libre, Tasa de Ahorro e Ingresos) computan las cifras acumuladas de todo el ejercicio anual.
-  2. **Gráfico de Evolución y Distribución Anual**:
-     - El gráfico de evolución muestra el desglose mensual de los 12 meses del año seleccionado.
-     - El gráfico Donut y la tabla desglosada por categoría agregan todos los gastos reales del año seleccionado.
-  3. **Diagnóstico y Gasto Medio Anual**:
-     - Si se visualiza el año completo, el diagnóstico calcula el gasto medio diario sobre los días transcurridos y el gasto medio mensual acumulado.
+### 📱 6. Asistente Bot de Telegram
+- **Registro en Lenguaje Natural**: Parser NLP que reconoce importes, comercios, categorías y cuentas (ej: `14.50 Mercadona compra`, `30 Cena en Revolut`, `+2200 Nómina`).
+- **Cuenta por Defecto**: Asignación automática inteligente (Revolut por defecto si no se indica otra).
+- **Comandos Rápidos**: `/saldo`, `/cuentas`, `/resumen`, `/ultimos`, `/categorias` y `/ayuda`.
+- **Traspasos**: Reconocimiento de comandos de transferencia (ej: `traspaso 300 Abanca a My Investor`).
+- **Seguridad**: Autenticación estricta por ID numérico de Telegram (`TELEGRAM_ALLOWED_USER_ID`).
 
 ---
-
-
 
 ## 3. 📂 Estructura del Proyecto
 
@@ -132,7 +72,6 @@ PF/
 ├── requirements.txt               # Dependencias de Python
 ├── Dockerfile                     # Contenedorización de la app
 ├── docker-compose.yml             # Orquestación de servicios web y bot
-├── oracle_finanzas.key            # Llave privada SSH para conectar con Oracle Cloud (NO versionar)
 ├── .env                           # Variables de entorno y secretos (NO versionar)
 │
 ├── src/
@@ -143,7 +82,7 @@ PF/
 │   │   └── schema.sql             # Esquema DDL de todas las tablas
 │   ├── services/
 │   │   ├── transaction_service.py # Lógica de transacciones, cuentas, categorías, CSV
-│   │   ├── budget_service.py      # Análisis 50/30/20 y fondo de emergencia
+│   │   ├── budget_service.py      # Análisis de presupuestos y fondo de emergencia
 │   │   ├── portfolio_service.py   # Patrimonio neto, activos, deudas y metas
 │   │   └── optimizer_service.py   # Algoritmos FIRE, interés compuesto y deudas
 │   ├── ui/
@@ -151,7 +90,7 @@ PF/
 │   │   └── views/
 │   │       ├── dashboard.py       # Panel central de gastos y flujo
 │   │       ├── cashflow.py        # Flujo de caja, transferencias e importación CSV
-│   │       ├── budgets.py         # Presupuestos por categoría y 50/30/20
+│   │       ├── budgets.py         # Presupuestos por categoría
 │   │       ├── portfolio.py       # Inversiones, activos, deudas y metas
 │   │       └── optimizer.py       # Simuladores FIRE y deudas
 │   └── utils/
@@ -159,18 +98,18 @@ PF/
 │       └── formatting.py          # Formateo de moneda y porcentajes
 │
 ├── deploy/
-│   ├── setup_oracle_cloud.sh      # Script de aprovisionamiento inicial en la VM
-│   ├── actualizar_servidor.sh     # Script unificado Git Push + Despliegue en Oracle
+│   ├── setup_oracle_cloud.sh      # Script de aprovisionamiento inicial en servidor VPS
+│   ├── actualizar_servidor.sh     # Script unificado Git Push + Despliegue en servidor
 │   ├── descargar_backup_db.sh     # Script para sincronizar DB de producción a local
 │   ├── finanzas-web.service       # Definición del servicio systemd para la web
 │   └── finanzas-bot.service       # Definición del servicio systemd para el bot
 │
 ├── data/
-│   ├── finance.db                 # Base de datos SQLite activa local
-│   └── backups/                   # Copias de seguridad históricas descargadas de la nube
+│   ├── finance.db                 # Base de datos SQLite activa (NO versionar)
+│   └── backups/                   # Copias de seguridad históricas locales (NO versionar)
 │
 └── tests/
-    ├── conftest.py                # Fixtures y base de datos de pruebas en memoria/temporal
+    ├── conftest.py                # Fixtures y base de datos de pruebas en memoria
     ├── test_optimizer.py          # Tests del motor financiero (FIRE, deudas, interés)
     ├── test_services.py           # Tests de servicios de base de datos y negocio
     └── test_telegram_bot.py       # Tests del bot de Telegram y parser de texto
@@ -178,9 +117,9 @@ PF/
 
 ---
 
-## 4. 🚀 Comandos y Flujo de Trabajo Frecuente
+## 4. 🚀 Comandos y Flujo de Trabajo
 
-### Ejecutar en Local
+### Ejecución en Local
 ```bash
 # 1. Ejecutar la aplicación Web (Streamlit)
 python3 -m streamlit run app.py
@@ -188,18 +127,18 @@ python3 -m streamlit run app.py
 # 2. Ejecutar el Bot de Telegram (en otra terminal)
 python3 run_bot.py
 
-# 3. Pasar la suite de tests
+# 3. Ejecutar la suite de tests
 PYTHONPATH="vendor:." python3 -m pytest tests/ -v
 ```
 
-### Actualización a Producción (Oracle Cloud + GitHub)
-Para subir cualquier cambio de código a GitHub y desplegarlo en el servidor de Oracle en un solo paso:
+### Actualización a Producción y GitHub
+Para versionar los cambios y desplegar en el servidor VPS:
 ```bash
 bash deploy/actualizar_servidor.sh "Descripción del cambio"
 ```
 
-### Sincronizar Base de Datos de Producción
-Para descargar a local las transacciones y cambios reales creados en el bot o la web en la nube:
+### Sincronización de Base de Datos
+Para descargar a local la base de datos de producción con los movimientos reales:
 ```bash
 bash deploy/descargar_backup_db.sh
 ```
@@ -208,33 +147,33 @@ bash deploy/descargar_backup_db.sh
 
 ## 5. 🤖 Formatos del Bot de Telegram
 
-El bot escucha mensajes del usuario autorizado (`TELEGRAM_ALLOWED_USER_ID`) y reconoce:
-
 * **Gastos**: `14.50 Mercadona compra`, `30 Cena en Revolut`, `5.20 Cafe con amigos`
 * **Ingresos**: `+2200 Nómina mensual`, `+50 Venta Wallapop`
 * **Traspasos**: `traspaso 300 Abanca a My Investor`, `transferir 50 de Cuenta Corriente a Ahorro`
 * **Comandos**:
-  - `/saldo` o `/cuentas`: Muestra el saldo de todas las cuentas y patrimonio neto.
-  - `/resumen`: Resumen del mes actual con desglose 50/30/20 y ahorro.
-  - `/ultimos`: Lista de los últimos 5 movimientos registrados.
-  - `/categorias`: Lista de categorías disponibles para gastos e ingresos.
-  - `/ayuda`: Guía de uso y ejemplos de sintaxis.
+  - `/saldo` o `/cuentas`: Muestra saldos y patrimonio neto.
+  - `/resumen`: Resumen del mes actual con desglose de gastos y ahorro.
+  - `/ultimos`: Lista de las últimas 5 transacciones registradas.
+  - `/categorias`: Lista de categorías disponibles.
+  - `/ayuda`: Guía de sintaxis y ejemplos.
 
 ---
 
 ## 6. 🔐 Variables de Entorno (`.env`)
 
-| Variable | Descripción | Ejemplo / Uso |
-| :--- | :--- | :--- |
-| `TELEGRAM_BOT_TOKEN` | Token del bot generado por @BotFather en Telegram | `123456789:ABC...` |
-| `TELEGRAM_ALLOWED_USER_ID` | ID numérico del usuario de Telegram permitido | `12345678` |
-| `WEB_PASSWORD` | Contraseña para desbloquear la web en Streamlit | `tu_password_segura` |
+Crea un archivo `.env` en la raíz del proyecto con la siguiente estructura:
+
+```env
+TELEGRAM_BOT_TOKEN=tu_token_de_bot_aqui
+TELEGRAM_ALLOWED_USER_ID=tu_id_numerico_de_telegram
+WEB_PASSWORD=tu_password_segura_aqui
+```
 
 ---
 
-## 7. 🎯 Directrices y Convenciones para Nuevas Sesiones
+## 7. 🎯 Directrices y Buenas Prácticas
 
-1. **Arquitectura por capas**: Mantener la separación estricta entre la capa de UI (`src/ui/`), servicios de negocio (`src/services/`) y acceso a datos (`src/database/`).
-2. **Cero regresiones**: Siempre ejecutar los tests unitarios (`pytest tests/ -v`) tras realizar modificaciones en servicios, base de datos o el bot.
-3. **Seguridad y privacidad**: Nunca incluir claves SSH, tokens de Telegram ni contraseñas en los commits de Git.
-4. **Despliegue atómico**: Las actualizaciones en el servidor de Oracle deben hacerse siempre a través del script `deploy/actualizar_servidor.sh`.
+1. **Arquitectura por Capas**: Mantener la separación estricta entre UI (`src/ui/`), servicios de negocio (`src/services/`) y acceso a base de datos (`src/database/`).
+2. **Cero Regresiones**: Ejecutar siempre los tests automatizados (`pytest tests/ -v`) tras cualquier cambio en la lógica o esquema.
+3. **Seguridad y Privacidad**: Nunca versionar bases de datos (`*.db`), archivos de entorno (`.env`) ni claves privadas (`*.key`).
+4. **Despliegue Atómico**: Utilizar los scripts automatizados en `deploy/` para garantizar despliegues seguros y consistentes.
