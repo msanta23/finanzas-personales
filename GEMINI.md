@@ -81,7 +81,21 @@ Este documento sirve como **fuente única de verdad y memoria del proyecto** par
   3. **Limpieza Inteligente de Etiquetas de Categoría**: Descarte automático de palabras redundantes de categoría (ej. `comida`, `supermercado`, `gasolina`, `ropa`) del concepto final cuando existe un comercio o descripción específica (ej. `15 ahorramas revolut comida` ➔ Concepto: `Ahorramas`, Cuenta: `Revolut`, Categoría: `Supermercado y Alimentación`).
   4. **Ampliación del Diccionario de Comercios**: Incorporación de marcas y cadenas de supermercados como `ahorramas`, `bonpreu`, `consum`, `costco`, etc.
 
+### 💬 Conversación 6: "Reestructuración del Panel Central y Desglose de Gastos Mensuales"
+* **Objetivo**: Separar las inversiones de los gastos puros en las métricas principales, eliminar la sección de presupuestos / 50-30-20 del panel central e incorporar la tabla de gastos mensuales ordenada por categoría.
+* **Lo que se implementó**:
+  1. **5 KPIs en Panel Central (`dashboard.py`)**:
+     - **Gastos**: Gastos puros de consumo (excluyendo aportaciones a inversión y ahorro).
+     - **Inversiones**: Aportaciones a ahorro e inversión del mes.
+     - **Margen Libre**: Superávit mensual neto (`Ingresos - Gastos - Inversiones`).
+     - **Tasa de Ahorro e Inversión**: Porcentaje destinado a patrimonio e inversión respecto a los ingresos.
+     - **Ingresos**: Total de ingresos percibidos en el mes.
+  2. **Eliminación de Presupuestos y 50/30/20 en Panel Central**: Desacopladas las alertas y tablas de presupuestos del panel principal.
+  3. **Tabla de Gastos del Mes por Categoría**: Nueva visualización agrupada y ordenada de mayor a menor importe, mostrando icono, categoría, total gastado, porcentaje sobre el total de gastos y número de movimientos.
+  4. **Gráfico Donut Ajustado**: Refleja la distribución de los gastos reales de consumo del mes en coherencia con el KPI de gastos.
+
 ---
+
 
 ## 3. 📂 Estructura del Proyecto
 

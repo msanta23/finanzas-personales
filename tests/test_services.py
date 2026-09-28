@@ -232,3 +232,17 @@ def test_plot_cashflow_bar_with_investments():
     assert "Ingresos" in names
     assert "Gastos" in names
     assert "Inversiones" in names
+
+def test_monthly_expenses_and_investments_separation(temp_db):
+    txs = get_transactions(year=2026, month=9, db_path=temp_db)
+    assert not txs.empty
+
+    income = txs[txs['type'] == 'income']['amount'].sum()
+    pure_expenses = txs[(txs['type'] == 'expense') & (txs['bucket_50_30_20'] != 'savings')]['amount'].sum()
+    investments = txs[(txs['type'] == 'expense') & (txs['bucket_50_30_20'] == 'savings')]['amount'].sum()
+
+    assert income > 0
+    assert pure_expenses > 0
+    assert investments > 0
+    assert pure_expenses + investments == txs[txs['type'] == 'expense']['amount'].sum()
+
