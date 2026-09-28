@@ -67,29 +67,36 @@ class TelegramFinanceBot:
         self.api_base = f"https://api.telegram.org/bot{self.token}"
 
         # Mapeo de palabras clave complementarias por categoría
+        # Mapeo de palabras clave complementarias por categoría
         self.keyword_category_map = {
-            # Supermercado y Alimentación
+            # Comida / Supermercado y Alimentación
+            "Comida": [
+                "supermercado", "super", "alimentacion", "comida", "alimentos", "mercadona", "carrefour", "lidl", "dia", "aldi",
+                "eroski", "alcampo", "hipercor", "ahorramas", "bonpreu", "consum", "costco", "gadis", "froiz", "alimerka", "coviran",
+                "spar", "condis", "bm", "fruta", "fruteria", "pan", "panaderia", "pescaderia", "carniceria", "compra", "comestibles"
+            ],
             "Supermercado y Alimentación": [
                 "supermercado", "super", "alimentacion", "comida", "alimentos", "mercadona", "carrefour", "lidl", "dia", "aldi",
-                "eroski", "alcampo", "hipercor", "fruta", "fruteria", "pan", "panaderia",
-                "pescaderia", "carniceria", "compra", "comestibles"
+                "eroski", "alcampo", "hipercor", "ahorramas", "bonpreu", "consum", "costco", "gadis", "froiz", "alimerka", "coviran",
+                "spar", "condis", "bm", "fruta", "fruteria", "pan", "panaderia", "pescaderia", "carniceria", "compra", "comestibles"
             ],
             # Restaurantes y Bares
             "Restaurantes y Bares": [
                 "restaurante", "restaurantes", "bar", "bares", "cafe", "cafeteria", "cerveza", "cervezas", "copa", "copas",
                 "cena", "cenar", "almuerzo", "comer fuera", "desayuno", "merienda", "tapas", "vermu", "mcdonalds", "burger",
-                "pizza", "telepizza", "dominos", "glovo", "uber eats", "just eat", "starbucks"
+                "burger king", "kfc", "pizza", "telepizza", "dominos", "glovo", "uber eats", "just eat", "starbucks",
+                "rodilla", "100 montaditos", "vips", "ginos", "fosters", "foster", "goiko", "tagliatella", "la mafia", "honest greens"
             ],
             # Transporte y Combustible
             "Transporte y Combustible": [
-                "transporte", "combustible", "gasolina", "gasoil", "diesel", "repsol", "cepsa", "bp", "galp",
-                "parking", "aparcamiento", "peaje", "uber", "cabify", "taxi", "freenow", "metro",
-                "bus", "autobus", "tren", "renfe", "ave", "vuelo", "billete", "taller", "coche", "itv"
+                "transporte", "combustible", "gasolina", "gasoil", "diesel", "repsol", "cepsa", "bp", "galp", "shell",
+                "plenoil", "ballenoil", "parking", "aparcamiento", "peaje", "uber", "cabify", "taxi", "freenow", "bolt", "metro",
+                "bus", "autobus", "tren", "renfe", "ave", "ouigo", "iryo", "vuelo", "billete", "taller", "coche", "itv", "bici"
             ],
             # Suscripciones
             "Suscripciones (Netflix, Spotify, etc.)": [
                 "suscripcion", "suscripciones", "netflix", "spotify", "hbo", "max", "disney", "prime", "amazon prime", "youtube",
-                "apple", "icloud", "chatgpt", "openai", "patreon", "twitch"
+                "apple", "icloud", "chatgpt", "openai", "claude", "patreon", "twitch", "dazn", "movistar plus", "filmin"
             ],
             # Suministros
             "Suministros (Luz, Agua, Gas, Internet)": [
@@ -103,13 +110,14 @@ class TelegramFinanceBot:
             ],
             # Compras y Ropa
             "Compras y Ropa": [
-                "ropa", "compras", "zara", "pull", "bershka", "stradivarius", "mango", "h&m", "zapatos",
-                "zapatillas", "corte ingles", "shein", "aliexpress", "amazon", "tienda"
+                "ropa", "compras", "zara", "pull", "bershka", "stradivarius", "mango", "h&m", "massimo dutti", "oysho",
+                "primark", "zapatos", "zapatillas", "corte ingles", "el corte ingles", "shein", "aliexpress", "amazon", "tienda",
+                "nike", "adidas", "ikea", "leroy merlin", "mediamarkt"
             ],
             # Deporte (palabras estrictas deportivas)
             "Deporte": [
                 "deporte", "deportes", "gimnasio", "gym", "padel", "crossfit", "decathlon", "running",
-                "futbol", "piscina", "entrenamiento", "suplemento", "proteina", "fitness"
+                "futbol", "piscina", "entrenamiento", "suplemento", "proteina", "fitness", "basic fit"
             ],
             # Salud y Seguros
             "Salud y Seguros": [
@@ -154,6 +162,32 @@ class TelegramFinanceBot:
             "Bodas": ["boda", "bodas"]
         }
 
+        # Etiquetas genéricas de categorías que pueden ser descartadas del concepto si queda un comercio o detalle
+        self.generic_category_tags = {
+            "Comida": ["supermercado", "super", "alimentacion", "comida", "alimentos", "comestibles", "compra", "compras"],
+            "Supermercado y Alimentación": ["supermercado", "super", "alimentacion", "comida", "alimentos", "comestibles", "compra", "compras"],
+            "Restaurantes y Bares": ["restaurantes", "restaurante", "bares", "bar", "comer fuera", "cafeteria", "cafe", "cenar", "cena", "almuerzo", "desayuno", "merienda", "tapas", "copas", "copa", "cervezas", "cerveza"],
+            "Transporte y Combustible": ["transporte", "combustible", "gasolina", "gasoil", "diesel", "parking", "aparcamiento", "peaje", "billete"],
+            "Suscripciones (Netflix, Spotify, etc.)": ["suscripciones", "suscripcion", "suscripcion mensual"],
+            "Suministros (Luz, Agua, Gas, Internet)": ["suministros", "suministro", "factura", "recibo", "electricidad", "luz", "agua", "gas", "internet", "fibra"],
+            "Ocio, Cine y Eventos": ["ocio", "eventos", "evento", "entradas", "entrada"],
+            "Compras y Ropa": ["compras", "compra", "ropa", "tienda"],
+            "Deporte": ["deportes", "deporte", "entrenamiento", "fitness", "gimnasio", "gym"],
+            "Salud y Seguros": ["seguros", "seguro", "salud", "medicina", "medicamento", "farmacia"],
+            "Viajes y Vacaciones": ["vacaciones", "viajes", "viaje", "escapada", "alojamiento", "hotel"],
+            "Vivienda (Alquiler/Hipoteca)": ["vivienda", "alquiler", "hipoteca", "comunidad"],
+            "Fondos Indexados / ETFs": ["inversiones", "inversion", "aportacion", "fondos", "fondo", "indexado", "indexados", "etf", "etfs"],
+            "Criptomonedas": ["criptomonedas", "criptomoneda", "cripto", "crypto"],
+            "Planes de Pensiones": ["planes de pensiones", "plan de pensiones", "plan pensiones", "plan pension", "pensiones", "pension"],
+            "Fondo de Emergencia": ["fondo de emergencia", "fondo emergencia", "emergencia", "colchon", "ahorro"],
+            "Nómina": ["nomina", "sueldo", "salario", "paga extra", "paga"],
+            "Dividendos e Intereses": ["dividendos", "dividendo", "intereses", "interes", "rendimiento"],
+            "Ventas / Freelance": ["freelance", "factura", "ventas", "venta"],
+            "Caprichos": ["caprichos", "capricho"],
+            "Necesidades": ["necesidades", "necesidad"],
+            "Bodas": ["bodas", "boda"],
+        }
+
     # ----------------------------------------------------
     # CLIENTE HTTP TELEGRAM
     # ----------------------------------------------------
@@ -181,7 +215,7 @@ class TelegramFinanceBot:
             return False
 
     # ----------------------------------------------------
-    # PARSER INTELIGENTE DE TEXTO Y CATEGORÍAS
+    # PARSER INTELIGENTE DE TEXTO, CUENTAS Y CATEGORÍAS
     # ----------------------------------------------------
     @staticmethod
     def _normalize(text: str) -> str:
@@ -191,6 +225,30 @@ class TelegramFinanceBot:
             return ""
         norm = ''.join(c for c in unicodedata.normalize('NFD', text.lower()) if unicodedata.category(c) != 'Mn')
         return re.sub(r'[^a-z0-9\s]', ' ', norm)
+
+    def _get_keywords_for_category(self, cat_name: str) -> List[str]:
+        """Obtiene palabras clave por nombre exacto o por coincidencia parcial si la categoría fue renombrada."""
+        if cat_name in self.keyword_category_map:
+            return self.keyword_category_map[cat_name]
+        
+        norm_name = self._normalize(cat_name)
+        for key, kws in self.keyword_category_map.items():
+            norm_key = self._normalize(key)
+            if norm_key in norm_name or norm_name in norm_key:
+                return kws
+        return []
+
+    def _get_generic_tags_for_category(self, cat_name: str) -> List[str]:
+        """Obtiene etiquetas genéricas por nombre exacto o coincidencia parcial."""
+        if cat_name in self.generic_category_tags:
+            return self.generic_category_tags[cat_name]
+        
+        norm_name = self._normalize(cat_name)
+        for key, tags in self.generic_category_tags.items():
+            norm_key = self._normalize(key)
+            if norm_key in norm_name or norm_name in norm_key:
+                return tags
+        return []
 
     def match_category(self, text: str, tx_type: str, df_cats) -> Tuple[int, str, str]:
         """
@@ -227,17 +285,14 @@ class TelegramFinanceBot:
                 score += 1000
 
             # 2. ¿Alguna palabra del nombre de la categoría está escrita por el usuario?
-            # Ej: usuario escribe "supermercado", "bodas", "deporte", "compras", "salud", "nomina"
             common_words = user_words.intersection(cat_name_words)
             if common_words:
                 score += len(common_words) * 300
 
             # 3. ¿Alguna palabra clave asociada coincide?
-            # Buscar en keyword_category_map
-            kw_list = self.keyword_category_map.get(cat_name, [])
+            kw_list = self._get_keywords_for_category(cat_name)
             for kw in kw_list:
                 norm_kw = self._normalize(kw)
-                # Si es una frase clave (ej. "el corte ingles", "uber eats")
                 if " " in norm_kw:
                     if norm_kw in norm_text:
                         score += 250
@@ -252,7 +307,6 @@ class TelegramFinanceBot:
             return best_cat
 
         # 4. Fallback si no hay ninguna coincidencia:
-        # Intentar categoría genérica como 'Otros Gastos' / 'Otros Ingresos' o la primera del tipo
         fallback_names = ["otros gastos", "general", "otros", "otros ingresos"]
         for _, r in cats_type.iterrows():
             if str(r['name']).lower() in fallback_names:
@@ -261,48 +315,153 @@ class TelegramFinanceBot:
         first_r = cats_type.iloc[0]
         return int(first_r['id']), str(first_r['name']), str(first_r['icon'] or "📌")
 
-
-    def match_account(self, text: str, df_accs) -> Tuple[Optional[int], str]:
-        """Identifica la cuenta bancaria mencionada o devuelve la principal."""
-        text_lower = text.lower()
+    def get_default_account(self, df_accs) -> Tuple[Optional[int], str]:
+        """Devuelve la cuenta por defecto: Revolut si existe, si no checking o primera de activo."""
         if df_accs.empty:
             return None, "Sin cuenta"
 
-        # 1. Buscar mención explícita o coincidencia de palabras clave
+        # 1. Prioridad: Cuenta con 'revolut' en el nombre
         for _, r in df_accs.iterrows():
-            acc_name = r['name'].lower()
-            clean_acc = re.sub(r'[^\w\s]', ' ', acc_name)
-            words = [w for w in clean_acc.split() if len(w) >= 3]
-            keywords = [acc_name] + words
-            if "my investor" in acc_name or "myinvestor" in acc_name:
-                keywords.extend(["my investor", "myinvestor", "investor", "inversion", "fondos"])
-            if "trade republic" in acc_name:
-                keywords.extend(["trade", "trade republic", "tr"])
-            if "open bank" in acc_name or "openbank" in acc_name:
-                keywords.extend(["openbank", "open bank", "open"])
-            if "revolut" in acc_name:
-                keywords.append("revolut")
-            if "abanca" in acc_name:
-                keywords.append("abanca")
-            if "pension" in acc_name:
-                keywords.append("pension")
-            if "remunerada" in acc_name or "ahorro" in acc_name:
-                keywords.extend(["ahorro", "remunerada"])
-            if "nómina" in acc_name or "nomina" in acc_name or "principal" in acc_name:
-                keywords.extend(["nomina", "nómina", "principal", "corriente"])
+            if "revolut" in str(r['name']).lower():
+                return int(r['id']), str(r['name'])
 
-            for kw in set(keywords):
-                if kw in text_lower:
-                    return int(r['id']), str(r['name'])
-
-        # 2. Cuenta por defecto: buscar cuenta corriente ('checking') o la primera cuenta activo
+        # 2. Prioridad: Cuenta corriente ('checking')
         checking = df_accs[df_accs['type'] == 'checking']
         if not checking.empty:
             r = checking.iloc[0]
             return int(r['id']), str(r['name'])
-        
+
+        # 3. Prioridad: Primera cuenta de activo
+        assets = df_accs[df_accs['is_asset'] == 1]
+        if not assets.empty:
+            r = assets.iloc[0]
+            return int(r['id']), str(r['name'])
+
+        # 4. Fallback: Primera cuenta disponible
         first_r = df_accs.iloc[0]
         return int(first_r['id']), str(first_r['name'])
+
+    def extract_account(self, text: str, df_accs) -> Tuple[Optional[int], str, str, bool]:
+        """
+        Detecta si se menciona explícitamente una cuenta bancaria en el texto.
+        Si se menciona, la elimina del texto y la devuelve.
+        Si no se menciona, devuelve la cuenta por defecto (Revolut) sin modificar el texto.
+        Retorna: (account_id, account_name, text_without_account, was_explicit)
+        """
+        if df_accs.empty:
+            return None, "Sin cuenta", text, False
+
+        alias_map = {
+            "revolut": ["revolut"],
+            "abanca": ["abanca"],
+            "my investor": ["my investor", "myinvestor", "my_investor"],
+            "myinvestor": ["my investor", "myinvestor", "my_investor"],
+            "trade republic": ["trade republic", "traderepublic", "trade_republic"],
+            "traderepublic": ["trade republic", "traderepublic", "trade_republic"],
+            "open bank": ["open bank", "openbank"],
+            "openbank": ["open bank", "openbank"],
+            "ibkr": ["ibkr", "interactive brokers"],
+            "bbva": ["bbva"],
+            "santander": ["santander", "banco santander"],
+            "caixabank": ["caixabank", "caixa", "la caixa"],
+            "caixa": ["caixabank", "caixa", "la caixa"],
+            "ing": ["ing direct", "ing"],
+            "n26": ["n26"],
+            "sabadell": ["sabadell", "banco sabadell"],
+            "bankinter": ["bankinter"],
+            "imagin": ["imagin", "imaginbank"],
+            "kraken": ["kraken"],
+            "binance": ["binance"],
+            "coinbase": ["coinbase"]
+        }
+
+        candidates = []
+        for _, r in df_accs.iterrows():
+            acc_id = int(r['id'])
+            acc_name = str(r['name'])
+            acc_name_lower = acc_name.lower()
+
+            keywords = [acc_name_lower]
+            for key, aliases in alias_map.items():
+                if key in acc_name_lower:
+                    keywords.extend(aliases)
+
+            # Palabras del nombre de la cuenta (>= 4 letras)
+            words = [w for w in re.sub(r'[^\w\s]', ' ', acc_name_lower).split() if len(w) >= 4]
+            stopwords_acc = {"cuenta", "corriente", "tarjeta", "fondo", "cartera", "principal", "ahorro", "inversion"}
+            keywords.extend([w for w in words if w not in stopwords_acc])
+
+            for kw in set(keywords):
+                if not kw.strip():
+                    continue
+                # Patrón que captura opcionalmente preposiciones: 'en revolut', 'con revolut', 'de abanca', 'cuenta revolut'
+                pattern = r'(?i)\b(?:(?:en|con|de|desde|por|a)\s+)?(?:cuenta\s+(?:de\s+)?)?' + re.escape(kw.strip()) + r'\b'
+                for m in re.finditer(pattern, text):
+                    candidates.append((m.span(), acc_id, acc_name, m.group(0)))
+
+        # Si hubo coincidencias explícitas en el texto
+        if candidates:
+            # Ordenar por longitud de coincidencia descendente
+            candidates.sort(key=lambda c: (c[0][1] - c[0][0]), reverse=True)
+            best_span, best_id, best_name, _ = candidates[0]
+            start, end = best_span
+            cleaned_text = (text[:start] + " " + text[end:]).strip()
+            cleaned_text = re.sub(r'\s+', ' ', cleaned_text).strip()
+            return best_id, best_name, cleaned_text, True
+
+        # Si no se mencionó ninguna cuenta explícita, usar la cuenta por defecto (Revolut)
+        def_id, def_name = self.get_default_account(df_accs)
+        return def_id, def_name, text, False
+
+    def match_account(self, text: str, df_accs) -> Tuple[Optional[int], str]:
+        """Identifica la cuenta bancaria mencionada o devuelve la principal/defecto."""
+        acc_id, acc_name, _, _ = self.extract_account(text, df_accs)
+        return acc_id, acc_name
+
+    def clean_concept(self, text: str, cat_name: str) -> str:
+        """
+        Limpia el concepto eliminando palabras redundantes de la categoría
+        si queda una descripción/comercio sustancial.
+        """
+        if not text:
+            return ""
+
+        raw_clean = re.sub(r'\s+', ' ', text).strip()
+        cleaned = raw_clean
+
+        # Obtener tags genéricos para la categoría detectada
+        tags = self._get_generic_tags_for_category(cat_name)
+        sorted_tags = sorted(tags, key=len, reverse=True)
+
+        for tag in sorted_tags:
+            tag_pattern = r'(?i)\b(?:(?:de|para|en|del|la|el|los|las)\s+)?' + re.escape(tag) + r'\b'
+            candidate = re.sub(tag_pattern, ' ', cleaned)
+            candidate = re.sub(r'\s+', ' ', candidate).strip()
+            candidate_clean = re.sub(r'(?i)^(?:en|de|del|para|por|con|a)\s+', '', candidate).strip()
+            candidate_clean = re.sub(r'(?i)\s+(?:en|de|del|para|por|con|a)$', '', candidate_clean).strip()
+
+            # Verificar si lo que queda tiene contenido sustancial
+            rem_words = [w for w in self._normalize(candidate_clean).split() if len(w) >= 2]
+            stop_words = {"en", "de", "del", "para", "por", "con", "a", "el", "la", "los", "las", "un", "una"}
+            meaningful_words = [w for w in rem_words if w not in stop_words]
+
+            if meaningful_words:
+                cleaned = candidate_clean
+
+        # Limpieza final de preposiciones sueltas al borde
+        cleaned = re.sub(r'(?i)^(?:en|de|del|para|por|con|a)\s+', '', cleaned).strip()
+        cleaned = re.sub(r'(?i)\s+(?:en|de|del|para|por|con|a)$', '', cleaned).strip()
+        cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+
+        # Si quedó vacío o sin palabras con significado, usar el texto original
+        if not cleaned:
+            cleaned = raw_clean
+
+        # Formatear adecuadamente si es minúscula
+        if cleaned.islower():
+            cleaned = cleaned.capitalize()
+
+        return cleaned
 
     # ----------------------------------------------------
     # PROCESAMIENTO DE MENSAJES Y COMANDOS
@@ -422,18 +581,23 @@ class TelegramFinanceBot:
                     src_acc_id, src_name = self.match_account(parts[0], df_accs)
                     dst_acc_id, dst_name = self.match_account(parts[1], df_accs)
                 else:
-                    # Default: Origen primera cuenta corriente, Destino primera inversión o cuenta ahorro
-                    checkings = df_accs[df_accs['type'] == 'checking']
+                    # Default: Origen cuenta por defecto (Revolut/checking), Destino primera inversión o cuenta ahorro
+                    def_id, def_name = self.get_default_account(df_accs)
+                    src_acc_id, src_name = def_id, def_name
                     investments = df_accs[df_accs['type'].isin(['investment', 'savings'])]
-                    if not checkings.empty:
-                        src_acc_id = int(checkings.iloc[0]['id'])
-                        src_name = str(checkings.iloc[0]['name'])
                     if not investments.empty:
-                        dst_acc_id = int(investments.iloc[0]['id'])
-                        dst_name = str(investments.iloc[0]['name'])
+                        other_inv = investments[investments['id'] != src_acc_id]
+                        if not other_inv.empty:
+                            dst_acc_id = int(other_inv.iloc[0]['id'])
+                            dst_name = str(other_inv.iloc[0]['name'])
+                        else:
+                            dst_acc_id = int(investments.iloc[0]['id'])
+                            dst_name = str(investments.iloc[0]['name'])
                     elif len(df_accs) > 1:
-                        dst_acc_id = int(df_accs.iloc[1]['id'])
-                        dst_name = str(df_accs.iloc[1]['name'])
+                        other_accs = df_accs[df_accs['id'] != src_acc_id]
+                        if not other_accs.empty:
+                            dst_acc_id = int(other_accs.iloc[0]['id'])
+                            dst_name = str(other_accs.iloc[0]['name'])
 
                 if not src_acc_id or not dst_acc_id or src_acc_id == dst_acc_id:
                     return "⚠️ *Error en traspaso:* Especifica dos cuentas distintas (ej: `traspaso 300 Abanca a My Investor`)."
@@ -445,7 +609,7 @@ class TelegramFinanceBot:
                     dest_account_id=dst_acc_id,
                     amount=amount,
                     date=today_str,
-                    description=rest_desc or f"Traspaso de {src_name} a {dst_name}",
+                    description=f"Traspaso de {src_name} a {dst_name}",
                     category_id=cat_id,
                     db_path=self.db_path
                 )
@@ -479,7 +643,7 @@ class TelegramFinanceBot:
             if rev_match:
                 amount_str = rev_match.group(1).replace(",", ".")
                 amount = float(amount_str)
-                concept = clean_text[:rev_match.start()].strip()
+                raw_concept = clean_text[:rev_match.start()].strip()
             else:
                 return (
                     "❓ No entendí el formato del movimiento.\n\n"
@@ -492,11 +656,20 @@ class TelegramFinanceBot:
         else:
             amount_str = match.group(1).replace(",", ".")
             amount = float(amount_str)
-            concept = match.group(2).strip()
+            raw_concept = match.group(2).strip()
 
         tx_type = 'income' if is_income else 'expense'
-        cat_id, cat_name, cat_icon = self.match_category(concept, tx_type, df_cats)
-        acc_id, acc_name = self.match_account(concept, df_accs)
+        
+        # 1. Identificar categoría
+        cat_id, cat_name, cat_icon = self.match_category(raw_concept, tx_type, df_cats)
+        
+        # 2. Identificar y extraer cuenta (o asignar cuenta por defecto Revolut)
+        acc_id, acc_name, text_without_acc, was_explicit = self.extract_account(raw_concept, df_accs)
+        
+        # 3. Limpiar concepto de palabras redundantes de categoría si queda comercio/descripción
+        final_concept = self.clean_concept(text_without_acc, cat_name)
+        if not final_concept:
+            final_concept = "Ingreso" if is_income else "Gasto"
 
         # Registrar transacción
         tx_id = add_transaction(
@@ -504,7 +677,7 @@ class TelegramFinanceBot:
             category_id=cat_id,
             date=today_str,
             amount=amount,
-            description=concept or ("Ingreso" if is_income else "Gasto"),
+            description=final_concept,
             tx_type=tx_type,
             update_balance=True,
             db_path=self.db_path
@@ -528,7 +701,7 @@ class TelegramFinanceBot:
             f"💵 *Importe:* `{signo}{amount:,.2f} {self.currency_symbol}`\n"
             f"🏷️ *Categoría:* {cat_icon} {cat_name}\n"
             f"🏦 *Cuenta:* {acc_name}\n"
-            f"📝 *Concepto:* {concept or 'Sin descripción'}\n"
+            f"📝 *Concepto:* {final_concept}\n"
             f"📅 *Fecha:* `{today_str}`{acc_bal_str}"
         )
 

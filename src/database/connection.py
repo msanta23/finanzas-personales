@@ -9,6 +9,8 @@ SCHEMA_PATH = Path(__file__).resolve().parent / "schema.sql"
 
 def get_connection(db_path: Path = DB_PATH) -> sqlite3.Connection:
     """Retorna una conexión a la base de datos SQLite."""
+    if isinstance(db_path, str):
+        db_path = Path(db_path)
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(db_path))
     conn.row_factory = sqlite3.Row
@@ -54,7 +56,7 @@ def seed_demo_data(db_path: Path = DB_PATH, force: bool = False):
         
         # Necesidades (Needs - 50%)
         ('Vivienda (Alquiler/Hipoteca)', 'expense', 'needs', '🏠', '#3B82F6'),
-        ('Supermercado y Alimentación', 'expense', 'needs', '🛒', '#60A5FA'),
+        ('Comida', 'expense', 'needs', '🛒', '#60A5FA'),
         ('Suministros (Luz, Agua, Gas, Internet)', 'expense', 'needs', '💡', '#93C5FD'),
         ('Transporte y Combustible', 'expense', 'needs', '🚗', '#2563EB'),
         ('Salud y Seguros', 'expense', 'needs', '🩺', '#1D4ED8'),
@@ -100,7 +102,7 @@ def seed_demo_data(db_path: Path = DB_PATH, force: bool = False):
 
     budgets = [
         (cat_map['Vivienda (Alquiler/Hipoteca)'], 850.0, 'default'),
-        (cat_map['Supermercado y Alimentación'], 400.0, 'default'),
+        (cat_map['Comida'], 400.0, 'default'),
         (cat_map['Suministros (Luz, Agua, Gas, Internet)'], 160.0, 'default'),
         (cat_map['Transporte y Combustible'], 120.0, 'default'),
         (cat_map['Salud y Seguros'], 80.0, 'default'),
@@ -154,7 +156,7 @@ def seed_demo_data(db_path: Path = DB_PATH, force: bool = False):
 
         # Supermercado semanal
         for day in [4, 11, 18, 25]:
-            tx_list.append((main_acc, cat_map['Supermercado y Alimentación'], f"{y_m}-{day:02d}", 85.0 + (day % 15), 'Compra semanal Mercadona', 'expense', 0))
+            tx_list.append((main_acc, cat_map['Comida'], f"{y_m}-{day:02d}", 85.0 + (day % 15), 'Compra semanal Mercadona', 'expense', 0))
 
         # Transporte / Gasolina
         tx_list.append((main_acc, cat_map['Transporte y Combustible'], f"{y_m}-10", 60.0, 'Gasolinera Repsol', 'expense', 0))

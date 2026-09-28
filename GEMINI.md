@@ -73,6 +73,14 @@ Este documento sirve como **fuente única de verdad y memoria del proyecto** par
      `git add` ➔ `git commit` ➔ `git push origin main` ➔ Empaquetado ➔ `scp` / `ssh` a Oracle Cloud ➔ Reinicio de servicios.
   3. **Protección de Datos Sensibles**: `.gitignore` configurado para no versionar `.env`, claves privadas `*.key`, backups de base de datos ni bases de datos activas (`data/finance.db`).
 
+### 💬 Conversación 5: "Refinamiento NLP del Bot de Telegram y Cuenta por Defecto"
+* **Objetivo**: Limpieza del concepto en transacciones y configuración de cuenta Revolut por defecto.
+* **Lo que se implementó**:
+  1. **Cuenta por Defecto Prioritaria**: Selección automática de `Revolut` si no se especifica ninguna cuenta en el mensaje del bot.
+  2. **Extracción y Limpieza de Cuenta**: Si se menciona una cuenta explícita (ej. `en revolut`, `abanca`, etc.), se extrae para asignar la transacción y se elimina del texto del concepto.
+  3. **Limpieza Inteligente de Etiquetas de Categoría**: Descarte automático de palabras redundantes de categoría (ej. `comida`, `supermercado`, `gasolina`, `ropa`) del concepto final cuando existe un comercio o descripción específica (ej. `15 ahorramas revolut comida` ➔ Concepto: `Ahorramas`, Cuenta: `Revolut`, Categoría: `Supermercado y Alimentación`).
+  4. **Ampliación del Diccionario de Comercios**: Incorporación de marcas y cadenas de supermercados como `ahorramas`, `bonpreu`, `consum`, `costco`, etc.
+
 ---
 
 ## 3. 📂 Estructura del Proyecto

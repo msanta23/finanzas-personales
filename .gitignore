@@ -12,6 +12,8 @@ __pycache__/
 data/finance.db
 data/*.sqlite
 data/*.db
+data/backups/
+data/backups/*
 
 # IDE y sistema
 .DS_Store
