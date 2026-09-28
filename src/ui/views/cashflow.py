@@ -92,11 +92,36 @@ def render_cashflow_view(currency_symbol: str = "€"):
             month_param = selected_month_tuple[1]
 
         with col_f1:
-            type_filter = st.selectbox("Tipo de Movimiento", ["Todos", "expense", "income"], format_func=lambda x: "Todos" if x == "Todos" else ("Gastos / Ahorro" if x == "expense" else "Ingresos"), key="tx_filter_type")
+            type_filter = st.selectbox(
+                "Tipo de Movimiento",
+                ["Todos", "expense", "savings", "income"],
+                format_func=lambda x: {
+                    "Todos": "Todos los tipos",
+                    "expense": "💸 Gastos",
+                    "savings": "📈 Ahorro / Inversión",
+                    "income": "💰 Ingresos"
+                }.get(x, x),
+                key="tx_filter_type"
+            )
             tx_type_param = None if type_filter == "Todos" else type_filter
 
         with col_f2:
-            cat_options = [("Todas las categorías", None)] + [(f"{row['icon']} {row['name']} ({'Ingreso' if row['type']=='income' else 'Gasto/Ahorro'})", row['id']) for _, row in df_cats.iterrows()]
+            if type_filter == "expense":
+                filtered_df_cats = df_cats[(df_cats['type'] == 'expense') & (df_cats['bucket_50_30_20'] != 'savings')]
+            elif type_filter == "savings":
+                filtered_df_cats = df_cats[df_cats['bucket_50_30_20'] == 'savings']
+            elif type_filter == "income":
+                filtered_df_cats = df_cats[df_cats['type'] == 'income']
+            else:
+                filtered_df_cats = df_cats
+
+            cat_options = [("Todas las categorías", None)] + [
+                (
+                    f"{row['icon']} {row['name']} ({'Ingreso' if row['type']=='income' else ('Ahorro / Inv.' if row['bucket_50_30_20']=='savings' else 'Gasto')})",
+                    row['id']
+                )
+                for _, row in filtered_df_cats.iterrows()
+            ]
             selected_cat_tuple = st.selectbox("Categoría", cat_options, format_func=lambda x: x[0], key="tx_filter_cat")
             cat_param = selected_cat_tuple[1]
 
@@ -126,17 +151,20 @@ def render_cashflow_view(currency_symbol: str = "€"):
 
         if not df_tx.empty:
             inc_total = df_tx[df_tx['type'] == 'income']['amount'].sum()
-            exp_total = df_tx[df_tx['type'] == 'expense']['amount'].sum()
-            net_total = inc_total - exp_total
+            exp_total = df_tx[(df_tx['type'] == 'expense') & (df_tx['bucket_50_30_20'] != 'savings')]['amount'].sum()
+            sav_total = df_tx[(df_tx['type'] == 'expense') & (df_tx['bucket_50_30_20'] == 'savings')]['amount'].sum()
+            net_total = inc_total - exp_total - sav_total
 
-            col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+            col_m1, col_m2, col_m3, col_m4, col_m5 = st.columns(5)
             with col_m1:
-                st.metric("Movimientos encontrados", f"{len(df_tx)}")
+                st.metric("Movimientos", f"{len(df_tx)}")
             with col_m2:
                 st.metric("Total Ingresos", f"+{format_currency(inc_total, currency_symbol)}")
             with col_m3:
                 st.metric("Total Gastos", f"-{format_currency(exp_total, currency_symbol)}")
             with col_m4:
+                st.metric("Ahorro / Inversión", f"-{format_currency(sav_total, currency_symbol)}")
+            with col_m5:
                 st.metric("Balance Neto", format_currency(net_total, currency_symbol))
 
             st.write("---")
@@ -147,14 +175,18 @@ def render_cashflow_view(currency_symbol: str = "€"):
                 lambda r: f"{'+' if r['type'] == 'income' else '-'}{format_currency(r['amount'], currency_symbol)}",
                 axis=1
             )
+            display_df['type_display'] = display_df.apply(
+                lambda r: '💰 Ingreso' if r['type'] == 'income' else ('📈 Ahorro / Inv.' if r.get('bucket_50_30_20') == 'savings' else '💸 Gasto'),
+                axis=1
+            )
             display_df['category_display'] = display_df['category_icon'].fillna('') + ' ' + display_df['category_name'].fillna('Sin categoría')
             display_df['recurring_display'] = display_df['is_recurring'].apply(lambda x: "🔁 Recurrente" if x == 1 else "⚡ Puntual")
             
-            cols_to_show = ['id', 'date', 'type', 'category_display', 'description', 'account_name', 'recurring_display', 'amount_formatted']
+            cols_to_show = ['id', 'date', 'type_display', 'category_display', 'description', 'account_name', 'recurring_display', 'amount_formatted']
             renamed_cols = {
                 'id': 'ID',
                 'date': 'Fecha',
-                'type': 'Tipo',
+                'type_display': 'Tipo',
                 'category_display': 'Categoría',
                 'description': 'Concepto',
                 'account_name': 'Cuenta',
@@ -548,11 +580,18 @@ def render_cashflow_view(currency_symbol: str = "€"):
                 
                 st.write("---")
                 st.write("**💸 Categorías de Gasto:**")
-                df_exp = df_cats[df_cats['type'] == 'expense']
+                df_exp = df_cats[(df_cats['type'] == 'expense') & (df_cats['bucket_50_30_20'] != 'savings')]
                 if not df_exp.empty:
-                    b_simple = {'needs': '🏠 Necesidades (50%)', 'wants': '🎉 Deseos (30%)', 'savings': '📈 Ahorro/Inversión (20%)'}
+                    b_simple = {'needs': '🏠 Necesidades (50%)', 'wants': '🎉 Deseos (30%)'}
                     for _, r in df_exp.iterrows():
                         st.write(f"- {r['icon']} **{r['name']}** *({b_simple.get(r['bucket_50_30_20'], r['bucket_50_30_20'])})*")
+
+                st.write("---")
+                st.write("**📈 Categorías de Ahorro e Inversión:**")
+                df_sav = df_cats[df_cats['bucket_50_30_20'] == 'savings']
+                if not df_sav.empty:
+                    for _, r in df_sav.iterrows():
+                        st.write(f"- {r['icon']} **{r['name']}** *(📈 Ahorro/Inversión 20%)*")
 
             elif cat_action == "✏️ Modificar Categoría":
                 if not df_cats.empty:
@@ -560,7 +599,7 @@ def render_cashflow_view(currency_symbol: str = "€"):
                     selected_cat_tuple = st.selectbox(
                         "Selecciona la categoría a modificar",
                         cat_edit_options,
-                        format_func=lambda x: f"{x[4]} {x[1]} ({'Ingreso' if x[2]=='income' else 'Gasto'})"
+                        format_func=lambda x: f"{x[4]} {x[1]} ({'Ingreso' if x[2]=='income' else ('Ahorro / Inversión' if x[3]=='savings' else 'Gasto')})"
                     )
                     if selected_cat_tuple:
                         c_id, c_name, c_type, c_bucket, c_icon, c_color = selected_cat_tuple
@@ -618,7 +657,7 @@ def render_cashflow_view(currency_symbol: str = "€"):
             elif cat_action == "➕ Nueva Categoría":
                 with st.form("form_add_cat", clear_on_submit=True):
                     cat_name = st.text_input("Nombre de la categoría", placeholder="Ej: Nómina Empresa X, Gimnasio, Mascotas...")
-                    cat_type = st.selectbox("Tipo de Categoría", ["income", "expense"], format_func=lambda x: "💰 Ingreso" if x == "income" else "💸 Gasto")
+                    cat_type = st.selectbox("Tipo de Categoría", ["expense", "income"], format_func=lambda x: "💰 Ingreso" if x == "income" else "💸 Gasto")
                     cat_bucket = st.selectbox("Asignación Presupuesto", ["income", "needs", "wants", "savings"], format_func=lambda x: bucket_labels.get(x, x))
                     cat_icon = st.text_input("Icono (Emoji)", value="💼" if cat_type == "income" else "📌")
                     
@@ -629,7 +668,7 @@ def render_cashflow_view(currency_symbol: str = "€"):
                             st.rerun()
 
             elif cat_action == "🗑️ Eliminar Categoría":
-                cat_del_options = [(f"{r['icon']} {r['name']} ({'Ingreso' if r['type']=='income' else 'Gasto'})", int(r['id'])) for _, r in df_cats.iterrows()]
+                cat_del_options = [(f"{r['icon']} {r['name']} ({'Ingreso' if r['type']=='income' else ('Ahorro / Inversión' if r['bucket_50_30_20']=='savings' else 'Gasto')})", int(r['id'])) for _, r in df_cats.iterrows()]
                 selected_cat_to_del = st.selectbox("Selecciona la categoría a eliminar", cat_del_options, format_func=lambda x: x[0])
                 if st.button("🗑️ Eliminar Categoría seleccionada", type="secondary"):
                     ok = delete_category(selected_cat_to_del[1])

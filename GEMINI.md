@@ -94,7 +94,33 @@ Este documento sirve como **fuente única de verdad y memoria del proyecto** par
   3. **Tabla de Gastos del Mes por Categoría**: Nueva visualización agrupada y ordenada de mayor a menor importe, mostrando icono, categoría, total gastado, porcentaje sobre el total de gastos y número de movimientos.
   4. **Gráfico Donut Ajustado**: Refleja la distribución de los gastos reales de consumo del mes en coherencia con el KPI de gastos.
 
+### 💬 Conversación 7: "Separación de Gastos y Ahorro en Filtros de Transacciones"
+* **Objetivo**: Separar el filtro de "Gastos / Ahorro" en dos opciones independientes ("Gastos" y "Ahorro / Inversión") en la vista de Flujo de Caja.
+* **Lo que se implementó**:
+  1. **Filtro de Tipo de Movimiento Independiente (`cashflow.py`)**:
+     - Opciones claras: `Todos los tipos`, `💸 Gastos` (gastos puros de necesidades y deseos), `📈 Ahorro / Inversión` (aportaciones patrimoniales y fondos) y `💰 Ingresos`.
+  2. **Actualización del Servicio (`transaction_service.py`)**:
+     - `get_transactions` ahora soporta `tx_type="expense"` (gastos reales excluyendo ahorro/inversión), `tx_type="savings"` (solo ahorro e inversión), `tx_type="all_expense"` y `bucket_50_30_20`.
+  3. **Categorías Dinámicas y Métricas en Historial**:
+     - El selector de categorías se adapta dinámicamente al tipo de movimiento seleccionado.
+     - Métricas KPI del historial desglosadas en 5 columnas: Movimientos, Total Ingresos, Total Gastos, Ahorro / Inversión y Balance Neto.
+     - Columna `Tipo` en la tabla formateada con etiquetas visuales (`💸 Gasto`, `📈 Ahorro / Inv.`, `💰 Ingreso`).
+     - Vista de categorías en pestaña 4 separada en Ingresos, Gastos y Ahorro e Inversión.
+
+### 💬 Conversación 8: "Filtro de Año Completo en Panel Central"
+* **Objetivo**: Permitir visualizar las estadísticas financieras de un año entero completo en el Panel Central (`dashboard.py`), además de la visualización por mes individual.
+* **Lo que se implementó**:
+  1. **Opción 'Todo el año' en Selector Temporal (`dashboard.py`)**:
+     - El selector de mes incluye ahora la opción inicial `"Todo el año"`.
+     - Si se elige un año y "Todo el año", los 5 KPIs principales (Gastos, Inversiones, Margen Libre, Tasa de Ahorro e Ingresos) computan las cifras acumuladas de todo el ejercicio anual.
+  2. **Gráfico de Evolución y Distribución Anual**:
+     - El gráfico de evolución muestra el desglose mensual de los 12 meses del año seleccionado.
+     - El gráfico Donut y la tabla desglosada por categoría agregan todos los gastos reales del año seleccionado.
+  3. **Diagnóstico y Gasto Medio Anual**:
+     - Si se visualiza el año completo, el diagnóstico calcula el gasto medio diario sobre los días transcurridos y el gasto medio mensual acumulado.
+
 ---
+
 
 
 ## 3. 📂 Estructura del Proyecto

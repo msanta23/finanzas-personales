@@ -246,3 +246,27 @@ def test_monthly_expenses_and_investments_separation(temp_db):
     assert investments > 0
     assert pure_expenses + investments == txs[txs['type'] == 'expense']['amount'].sum()
 
+def test_get_transactions_filter_by_expense_savings_income(temp_db):
+    # Probar que tx_type='expense' solo trae gastos puros (no ahorro/inversión)
+    exp_txs = get_transactions(tx_type="expense", db_path=temp_db)
+    assert not exp_txs.empty
+    for _, row in exp_txs.iterrows():
+        assert row["type"] == "expense"
+        assert row["bucket_50_30_20"] != "savings"
+
+    # Probar que tx_type='savings' solo trae ahorro/inversión
+    sav_txs = get_transactions(tx_type="savings", db_path=temp_db)
+    assert not sav_txs.empty
+    for _, row in sav_txs.iterrows():
+        assert row["bucket_50_30_20"] == "savings"
+
+    # Probar que tx_type='income' solo trae ingresos
+    inc_txs = get_transactions(tx_type="income", db_path=temp_db)
+    assert not inc_txs.empty
+    for _, row in inc_txs.iterrows():
+        assert row["type"] == "income"
+
+    # Probar que la suma de pure expenses + savings coincide con all_expense
+    all_exp_txs = get_transactions(tx_type="all_expense", db_path=temp_db)
+    assert len(all_exp_txs) == len(exp_txs) + len(sav_txs)
+

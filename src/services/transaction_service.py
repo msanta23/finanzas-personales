@@ -130,6 +130,7 @@ def get_transactions(
     year: Optional[int] = None,
     month: Optional[int] = None,
     is_recurring: Optional[int] = None,
+    bucket_50_30_20: Optional[str] = None,
     limit: int = 1000,
     db_path: Path = DB_PATH
 ) -> pd.DataFrame:
@@ -184,8 +185,18 @@ def get_transactions(
         query += " AND t.account_id = ?"
         params.append(account_id)
     if tx_type:
-        query += " AND t.type = ?"
-        params.append(tx_type)
+        if tx_type == "expense":
+            query += " AND t.type = 'expense' AND (c.bucket_50_30_20 != 'savings' OR c.bucket_50_30_20 IS NULL)"
+        elif tx_type == "savings":
+            query += " AND c.bucket_50_30_20 = 'savings'"
+        elif tx_type == "all_expense":
+            query += " AND t.type = 'expense'"
+        else:
+            query += " AND t.type = ?"
+            params.append(tx_type)
+    if bucket_50_30_20:
+        query += " AND c.bucket_50_30_20 = ?"
+        params.append(bucket_50_30_20)
     if is_recurring is not None:
         query += " AND t.is_recurring = ?"
         params.append(1 if is_recurring else 0)
