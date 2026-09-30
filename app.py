@@ -16,7 +16,29 @@ st.set_page_config(
     page_title="Optimizador de Finanzas Personales",
     page_icon="💰",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
+)
+
+# Ocultar barra lateral y dejar cabecera transparente para mantener los 3 puntos arriba a la derecha
+st.markdown(
+    """
+    <style>
+        [data-testid="stSidebar"], [data-testid="collapsedControl"] {
+            display: none !important;
+        }
+        header[data-testid="stHeader"] {
+            background: transparent !important;
+        }
+        footer {
+            visibility: hidden;
+        }
+        .block-container {
+            padding-top: 4.2rem !important;
+            padding-bottom: 2rem !important;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
 )
 
 from src.utils.auth import check_password, render_logout_button
@@ -35,75 +57,40 @@ from src.ui.views.optimizer import render_optimizer_view
 init_db()
 seed_demo_data(force=False)
 
-@st.dialog("⚠️ Confirmación de Borrado Total")
-def confirm_clear_dialog():
-    st.warning("⚠️ **Atención:** Esta acción es irreversible. Se borrarán todas las transacciones, cuentas, presupuestos y metas financieras.")
-    confirm_check = st.checkbox("Confirmo que deseo borrar todos los datos", value=False)
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("❌ Cancelar", use_container_width=True):
-            st.rerun()
-    with col2:
-        if st.button("🗑️ Borrar Definitivamente", type="primary", disabled=not confirm_check, use_container_width=True):
-            clear_user_data(keep_categories=True)
-            st.toast("¡Base de datos limpia! Lista para empezar de cero.", icon="🗑️")
-            st.rerun()
-
-@st.dialog("🔄 Cargar Datos de Demostración")
-def confirm_seed_dialog():
-    st.info("ℹ️ Esta acción reemplazará los datos actuales con el conjunto completo de datos de demostración de ejemplo.")
-    confirm_check = st.checkbox("Confirmo que deseo sobreescribir con datos de prueba", value=False)
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("❌ Cancelar", use_container_width=True):
-            st.rerun()
-    with col2:
-        if st.button("🔄 Cargar Demo", type="primary", disabled=not confirm_check, use_container_width=True):
-            seed_demo_data(force=True)
-            st.toast("¡Datos de demostración restaurados!", icon="🔄")
-            st.rerun()
-
 def main():
     # ----------------------------------------------------
-    # SIDEBAR / MENÚ DE NAVEGACIÓN
+    # BARRA SUPERIOR (MENÚ DE NAVEGACIÓN Y CERRAR SESIÓN)
     # ----------------------------------------------------
-    with st.sidebar:
-        st.markdown("## 💰 **FinanzasPro**")
-        st.caption("Sistema de Optimización Financiera")
-        st.markdown("---")
+    col_nav, col_logout = st.columns([6, 1], vertical_alignment="center")
 
-        page_selection = st.radio(
+    with col_nav:
+        nav_options = [
+            "📊 Panel Central",
+            "💸 Flujo de Caja y Gastos",
+            "🎯 Presupuestos y 50/30/20",
+            "📈 Patrimonio e Inversiones",
+            "🚀 Motor de Optimización"
+        ]
+
+        page_selection = st.segmented_control(
             "Navegación",
-            [
-                "📊 Panel Central",
-                "💸 Flujo de Caja y Gastos",
-                "🎯 Presupuestos y 50/30/20",
-                "📈 Patrimonio e Inversiones",
-                "🚀 Motor de Optimización"
-            ],
-            index=0
+            nav_options,
+            default="📊 Panel Central",
+            label_visibility="collapsed"
         )
+        if not page_selection:
+            page_selection = "📊 Panel Central"
 
-        st.markdown("---")
-        st.subheader("⚙️ Configuración")
-        currency_symbol = st.selectbox("Moneda principal", ["€", "$", "£"], index=0)
-
-        with st.expander("🛠️ Gestión de Datos"):
-            if st.button("🗑️ Limpiar Datos (Empezar de Cero)", type="primary", use_container_width=True, help="Borra todos los movimientos, cuentas y presupuestos de ejemplo conservando las categorías para tus finanzas."):
-                confirm_clear_dialog()
-
-            if st.button("🔄 Cargar Datos de Demostración", type="secondary", use_container_width=True, help="Restaura un conjunto completo de transacciones, cuentas y metas de ejemplo."):
-                confirm_seed_dialog()
-
-        st.markdown("---")
+    with col_logout:
         render_logout_button()
-        st.caption("Desarrollado para optimización patrimonial e independencia financiera.")
+
+    st.markdown("---")
 
     # ----------------------------------------------------
     # RENDERIZADO DE LA VISTA SELECCIONADA
     # ----------------------------------------------------
+    currency_symbol = "€"
+
     if page_selection == "📊 Panel Central":
         render_dashboard_view(currency_symbol=currency_symbol)
     elif page_selection == "💸 Flujo de Caja y Gastos":

@@ -66,8 +66,8 @@ def check_password() -> bool:
     return False
 
 def render_logout_button():
-    """Muestra el botón de cerrar sesión en la barra lateral."""
+    """Muestra el botón de cerrar sesión."""
     if st.session_state.get("authenticated", False):
-        if st.sidebar.button("🚪 Cerrar Sesión", use_container_width=True):
+        if st.button("🚪 Cerrar Sesión", key="logout_btn", use_container_width=True):
             st.session_state["authenticated"] = False
             st.rerun()
